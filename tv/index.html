@@ -308,8 +308,11 @@ function arrange(list){
   const courts = list.filter(isCourts), other = list.filter(x => !isCourts(x));
   if(!courts.length || !other.length) return list;
   const out = [];
-  other.forEach((x, i) => { out.push(x); if(i % 2 === 1) out.push(courts[0]); });
-  if(other.length % 2 === 1) out.push(courts[0]);
+  // Courts screens take turns (Indoor -> Outdoor 1-12 -> Outdoor 13-16 ...) after every 2 other slides
+  const seen = {}, uniq = courts.filter(c => { const k = String(c.link || c.url || ''); return seen[k] ? false : (seen[k] = 1); });
+  let ci = 0;
+  other.forEach((x, i) => { out.push(x); if(i % 2 === 1) out.push(uniq[ci++ % uniq.length]); });
+  if(other.length % 2 === 1) out.push(uniq[ci++ % uniq.length]);
   return out;
 }
 
