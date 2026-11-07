@@ -137,6 +137,10 @@
   @keyframes pulse{50%{opacity:.25}}
   .courtsBody{flex:1;border-radius:1vw;overflow:hidden;border:1px solid var(--line);background:#0b161d;position:relative}
   .courtsBody iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  /* CourtReserve lobby view: rendered at a fixed desktop size, scaled to fit, and panned to "now" */
+  .cr{position:absolute;left:0;right:0;overflow:hidden}
+  .cr iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;inset:auto}
+  .cr.body iframe{transition:transform 1.5s ease}
   .courtsBody .embed{position:absolute;inset:0;overflow:hidden}
 
   /* ---------- Footer ---------- */
@@ -332,10 +336,38 @@ function mountEmbed(box, val){
       s.textContent = old.textContent; old.replaceWith(s);
     });
     box.appendChild(wrap);
+  } else if(/courtreserve\.com/i.test(val)){
+    mountCourtReserve(box, val);
   } else if(val){
     const f = document.createElement('iframe'); f.src = val; box.appendChild(f);
   }
 }
+
+/* CourtReserve's widget jumps back to 7 AM when it refreshes, so we don't rely on its own scrolling.
+   We render it tall enough to hold the whole day, pin its header (date + court names) on top,
+   and pan the schedule underneath so the current time is always in view. */
+const CR = { w:1600, h:1500, header:129, startMin:7*60, rowMin:30, rowPx:47.25, dayPx:1323, leadMin:30 };
+function mountCourtReserve(box, url){
+  box.innerHTML = '<div class="cr head"><iframe scrolling="no"></iframe></div><div class="cr body"><iframe scrolling="no"></iframe></div>';
+  box.querySelectorAll('iframe').forEach(f => { f.dataset.src = url; f.src = url; f.width = CR.w; f.height = CR.h; });
+  box._crLayout = () => layoutCourtReserve(box);
+  layoutCourtReserve(box);
+}
+function layoutCourtReserve(box){
+  const W = box.clientWidth, H = box.clientHeight; if(!W || !H) return;
+  const k = W / CR.w, headH = CR.header * k;
+  const head = box.querySelector('.cr.head'), body = box.querySelector('.cr.body');
+  head.style.top = '0'; head.style.height = headH + 'px';
+  body.style.top = headH + 'px'; body.style.bottom = '0';
+  const visible = (H - headH) / k;                                   // schedule height we can show, in widget px
+  const now = new Date(), mins = now.getHours() * 60 + now.getMinutes() - CR.startMin - CR.leadMin;
+  let off = Math.max(0, mins) / CR.rowMin * CR.rowPx;
+  off = Math.min(off, Math.max(0, CR.dayPx - visible));
+  head.querySelector('iframe').style.transform = `scale(${k})`;
+  body.querySelector('iframe').style.transform = `scale(${k}) translateY(${-(CR.header + off)}px)`;
+}
+setInterval(() => document.querySelectorAll('.courtsBody').forEach(b => b._crLayout && b._crLayout()), 60 * 1000);
+window.addEventListener('resize', () => document.querySelectorAll('.courtsBody').forEach(b => b._crLayout && b._crLayout()));
 
 function render(s){
   const type = String(s.type || 'announcement').toLowerCase().trim();
@@ -416,12 +448,14 @@ function next(){
   document.getElementById('nextTitle').textContent = slides[(idx + 1) % slides.length].title || '';
   // Reload the CourtReserve widget one slide early so it opens fresh, scrolled to the current time
   const upcoming = els[(idx + 1) % els.length];
-  const crFrame = upcoming && upcoming.querySelector('.courtsBody iframe');
-  if(crFrame && upcoming !== els[idx]){
-    const base = crFrame.dataset.src || crFrame.src;
-    crFrame.dataset.src = base;
-    crFrame.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+  if(upcoming && upcoming !== els[idx]){
+    upcoming.querySelectorAll('.courtsBody iframe').forEach(f => {
+      const base = f.dataset.src || f.src; f.dataset.src = base;
+      f.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+    });
+    const cb = upcoming.querySelector('.courtsBody'); if(cb && cb._crLayout) cb._crLayout();
   }
+  const cbNow = els[idx].querySelector('.courtsBody'); if(cbNow && cbNow._crLayout) cbNow._crLayout();
   timer = setTimeout(next, secs * 1000);
 }
 
