@@ -346,10 +346,10 @@ function mountEmbed(box, val){
 /* CourtReserve's widget jumps back to 7 AM when it refreshes, so we don't rely on its own scrolling.
    We render it tall enough to hold the whole day, pin its header (date + court names) on top,
    and pan the schedule underneath so the current time is always in view. */
-const CR = { w:1600, h:1500, header:129, startMin:7*60, rowMin:30, rowPx:47.25, dayPx:1323, leadMin:30 };
+const CR = { w:1600, h:1520, header:129, startMin:7*60, rowMin:30, rowPx:47.25, dayPx:1323, leadMin:30 };
 function mountCourtReserve(box, url){
   box.innerHTML = '<div class="cr head"><iframe scrolling="no"></iframe></div><div class="cr body"><iframe scrolling="no"></iframe></div>';
-  box.querySelectorAll('iframe').forEach(f => { f.dataset.src = url; f.src = url; f.width = CR.w; f.height = CR.h; });
+  box.querySelectorAll('iframe').forEach(f => { f.dataset.src = url; f.src = url; f.style.width = CR.w + 'px'; f.style.height = CR.h + 'px'; });
   box._crLayout = () => layoutCourtReserve(box);
   layoutCourtReserve(box);
 }
