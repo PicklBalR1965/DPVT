@@ -415,6 +415,14 @@ function next(){
   const cur = sg[idx].firstChild;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ cur.style.transition = `width ${secs}s linear`; cur.style.width = '100%'; }));
   document.getElementById('nextTitle').textContent = slides[(idx + 1) % slides.length].title || '';
+  // Reload the CourtReserve widget one slide early so it opens fresh, scrolled to the current time
+  const upcoming = els[(idx + 1) % els.length];
+  const crFrame = upcoming && upcoming.querySelector('.courtsBody iframe');
+  if(crFrame && upcoming !== els[idx]){
+    const base = crFrame.dataset.src || crFrame.src;
+    crFrame.dataset.src = base;
+    crFrame.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+  }
   timer = setTimeout(next, secs * 1000);
 }
 
