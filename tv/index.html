@@ -198,6 +198,8 @@ function toDate(v, endOfDay){
 function isLive(s){
   if(s.show === false || /^(false|no|0|off)$/i.test(String(s.show).trim())) return false;
   if(!s.title && !s.link) return false;
+  const ty = String(s.type||'').toLowerCase().trim(), lk = String(s.link||'').trim();
+  if((ty === 'courts' || ty === 'courtreserve') && !/^(https?:\/\/|<)/i.test(lk)) return false;  // no real CourtReserve link yet
   const now = new Date(), st = toDate(s.start), en = toDate(s.end, true);
   if(st && now < st) return false;
   if(en && now > en) return false;
