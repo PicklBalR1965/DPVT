@@ -186,6 +186,7 @@ const REFRESH_MINUTES = 5;
 const RELOAD_HOURS = 6;
 const DEFAULT_SECONDS = 10;
 const LAT = 40.31, LON = -75.13;   // Doylestown, PA (weather)
+
 const LOGO = document.querySelector('.brand img').src;
 
 // Website colors only. [accent, lighter text tint, glow]
@@ -282,8 +283,20 @@ function isLive(s){
   return true;
 }
 
+// Keeps "Who's on the Courts" as every 3rd slide, whatever else is in the loop
+function arrange(list){
+  const isCourts = x => /^(courts|courtreserve)$/i.test(String(x.type || '').trim());
+  const courts = list.filter(isCourts), other = list.filter(x => !isCourts(x));
+  if(!courts.length || !other.length) return list;
+  const out = [];
+  other.forEach((x, i) => { out.push(x); if(i % 2 === 1) out.push(courts[0]); });
+  if(other.length % 2 === 1) out.push(courts[0]);
+  return out;
+}
+
 function apply(rows, fresh, failed){
-  const live = rows.filter(isLive);
+  let live = rows.filter(isLive);
+  live = arrange(live);
   if(fresh){ try{ localStorage.setItem('dp-signage', JSON.stringify(rows)); }catch(e){} }
   document.getElementById('status').textContent = (!fresh && failed) ? 'offline · showing saved slides' : '';
   const nxt = live.length ? live : FALLBACK;
@@ -370,7 +383,8 @@ setInterval(() => document.querySelectorAll('.courtsBody').forEach(b => b._crLay
 window.addEventListener('resize', () => document.querySelectorAll('.courtsBody').forEach(b => b._crLayout && b._crLayout()));
 
 function render(s){
-  const type = String(s.type || 'announcement').toLowerCase().trim();
+  let type = String(s.type || 'announcement').toLowerCase().trim();
+  if(type === 'blog'){ s = Object.assign({}, s, {label:'Club News', scanText:'Scan to read more'}); type = 'qr'; }
   const el = document.createElement('section');
   el.className = 'slide';
   const acc = String(s.accent || '').toLowerCase().trim();
@@ -402,11 +416,11 @@ function render(s){
   }
   const label = {announcement:'Announcement',event:'Event',qr:'Scan Me',league:'Leagues',leagues:'Leagues',
                  schedule:'Schedule',shop:'Pro Shop',lessons:'Lessons',community:'Community'}[type];
-  const label2 = label === undefined ? type : label;
+  const label2 = s.label ? s.label : (label === undefined ? type : label);
   const icon = String(s.icon || '').trim() || TYPE_ICONS[type] || 'sparkles';
   let visual;
   if(type === 'qr' && link){
-    visual = `<div class="qr"><div class="code">${qrSvg(link)}</div><span><i data-lucide="scan-line"></i>Scan with your camera</span></div>`;
+    visual = `<div class="qr"><div class="code">${qrSvg(link)}</div><span><i data-lucide="scan-line"></i>${esc(s.scanText || 'Scan with your camera')}</span></div>`;
   } else if(photo){
     visual = '';
   } else {
