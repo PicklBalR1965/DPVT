@@ -113,7 +113,9 @@
     background:radial-gradient(circle at 50% 0%,rgba(33,152,161,.28),transparent 60%),linear-gradient(160deg,var(--navy-dk),#071219)}
   .slide.hero::before{display:none}
   .slide.hero .heroLogo{width:10vw;height:10vw;margin:0 auto 1.6vw;display:block}
-  .slide.hero h1{font-size:7vw}
+  .slide.hero h1{font-size:6.4vw;white-space:nowrap}
+  .slide.hero h1 .pre{display:block;font-size:.45em;font-weight:400;color:var(--teal-lt);letter-spacing:.04em;margin-bottom:.35em}
+  .slide.hero .txt{max-width:94vw}
   .slide.hero h2{color:var(--teal-lt)}
   .slide.hero p{margin-left:auto;margin-right:auto}
   .slide.hero .chips{justify-content:center}
@@ -408,10 +410,12 @@ function render(s){
       ${s.title ? `<div class="cap txt"><h1>${esc(s.title)}</h1>${s.subtitle?`<h2>${esc(s.subtitle)}</h2>`:''}</div>` : ''}`;
     return el;
   }
+  function heroTitle(t){ const m = String(t||'').match(/^(welcome to)\s+(.+)$/i);
+    return m ? `<span class="pre">${esc(m[1])}</span>${esc(m[2])}` : esc(t); }
   if(type === 'welcome'){
     el.classList.add('hero');
     el.innerHTML = picHtml + `<div class="txt"><img class="heroLogo" src="${LOGO}" alt="">
-      <h1>${esc(s.title)}</h1>${s.subtitle?`<h2>${esc(s.subtitle)}</h2>`:''}${detailsHtml(s.details)}</div>`;
+      <h1>${heroTitle(s.title)}</h1>${s.subtitle?`<h2>${esc(s.subtitle)}</h2>`:''}${detailsHtml(s.details)}</div>`;
     return el;
   }
   const label = {announcement:'Announcement',event:'Event',qr:'Scan Me',league:'Leagues',leagues:'Leagues',
