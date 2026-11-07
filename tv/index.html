@@ -147,6 +147,13 @@
   .cr.body iframe{transition:transform 1.5s ease}
   .courtsBody .embed{position:absolute;inset:0;overflow:hidden}
 
+  .courtsRow{flex:1;display:flex;gap:.8vw;min-height:0}
+  .takeQr{width:11vw;flex:none;align-self:flex-end;text-align:center;background:var(--card);border:1px solid var(--line);
+    border-radius:.8vw;padding:.8vw;line-height:1.2}
+  .takeQr .code{background:#e9f1f3;padding:.6vw;border-radius:.5vw;margin-bottom:.6vw}
+  .takeQr .code svg{display:block;width:100%;height:auto}
+  .takeQr b{display:block;font-size:1.05vw;color:var(--teal-lt)}
+  .takeQr span{display:block;font-size:.8vw;color:var(--muted);margin-top:.3vw}
   /* Courts slides take over the whole screen: header and footer tuck away */
   body.wide header,body.wide footer{display:none}
   body.wide main{margin:.6vw}
@@ -426,7 +433,8 @@ function render(s){
   if(type === 'courts' || type === 'courtreserve'){
     el.classList.add('courts');
     el.innerHTML = `<div class="courtsHead"><h1>${esc(s.title || "Who's on the Courts")}</h1>
-      <div class="live"><i></i>LIVE</div><div class="now"></div></div><div class="courtsBody"></div>`;
+      <div class="live"><i></i>LIVE</div><div class="now"></div></div><div class="courtsRow"><div class="courtsBody"></div>
+      ${/^https?:/i.test(link) ? `<div class="takeQr"><div class="code">${qrSvg(link)}</div><b>Take it with you</b><span>Scan to see who's on court on your phone</span></div>` : ''}</div>`;
     mountEmbed(el.querySelector('.courtsBody'), link);
     return el;
   }
