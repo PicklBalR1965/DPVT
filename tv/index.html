@@ -358,6 +358,160 @@ function arrange(list){
   const courts = list.filter(isCourts), other = list.filter(x => !isCourts(x));
   if(!courts.length || !other.length) return list;
   const out = [];
+  // Courts screens take turns (Indoor -> Outdoor 1-12 -> Outdoor 13-16 ...) after every 2 other slides
+  const seen = {};
+  let uniq = courts.filter(c => { const k = String(c.link || c.url || ''); return seen[k] ? false : (seen[k] = 1); });
+  if(BOARD.ok) uniq = [Object.assign({}, courts[0], {type:'board', title:"Who's on the Courts", link:'', secs:courts[0].secs || 30})];
+  let ci = 0;
+  other.forEach((x, i) => { out.push(x); if(i % 2 === 1) out.push(uniq[ci++ % uniq.length]); });
+  if(other.length % 2 === 1) out.push(uniq[ci++ % uniq.length]);
+  return out;
+}
+
+function apply(rows, fresh, failed){
+  let live = rows.filter(isLive);
+  live = arrange(live);
+  if(fresh){ try{ localStorage.setItem('dp-signage', JSON.stringify(rows)); }catch(e){} }
+  document.getElementById('status').textContent = (!fresh && failed) ? 'offline · showing saved slides' : '';
+  const nxt = live.length ? live : FALLBACK;
+  if(JSON.stringify(nxt) === JSON.stringify(slides) && timer) return;   // nothing changed
+  slides = nxt;
+  build();
+}
+
+function useCache(failed){
+  let rows = null;
+  try{ rows = JSON.parse(localStorage.getItem('dp-signage')); }catch(e){}
+  if(rows){
+    rows.forEach(r => ['start','end'].forEach(k => { if(r[k]) r[k] = new Date(r[k]); }));
+    apply(rows, false, failed);
+  } else if(!slides.length){
+    slides = FALLBACK; build();
+    if(failed) document.getElementById('status').textContent = 'offline · showing default slides';
+  }
+}
+
+/* ---------- Rendering ---------- */
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function imgUrl(u){
+  const m = String(u).match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?.*id=)([\w-]+)/);
+  return m ? `https://lh3.googleusercontent.com/d/${m[1]}=w1920` : u;
+}
+const looksLikeImage = u => /\.(png|jpe?g|gif|webp|avif)(\?|$)/i.test(u) || /drive\.google\.com|googleusercontent/.test(u);
+function qrSvg(text){
+  if(typeof qrcode === 'undefined') return '';
+  const q = qrcode(0, 'M'); q.addData(text); q.make();
+  return q.createSvgTag({cellSize:8, margin:0, scalable:true});
+}
+
+/* QR as a real PNG image (drawn on a canvas): scales cleanly and works in old TV browsers where inline SVG can misbehave */
+function qrImg(text){
+  if(typeof qrcode === 'undefined') return '';
+  try{
+    const q = qrcode(0, 'M'); q.addData(text); q.make();
+    const n = q.getModuleCount(), cell = 12, quiet = 3, size = (n + quiet * 2) * cell;
+    const c = document.createElement('canvas'); c.width = size; c.height = size;
+    const x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, size, size); x.fillStyle = '#000000';
+    for(let r = 0; r < n; r++) for(let k = 0; k < n; k++) if(q.isDark(r, k)) x.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+    return '<img class="qrimg" alt="QR code" src="' + c.toDataURL('image/png') + '">';
+  }catch(e){ return qrSvg(text); }
+}
+
+function detailsHtml(d){
+  if(!d) return '';
+  const parts = String(d).split('|').map(x => x.trim()).filter(Boolean);
+  return parts.length > 1
+    ? `<div class="chips">${parts.map(x => `<span class="chip">${esc(x)}</span>`).join('')}</div>`
+    : `<p>${esc(d)}</p>`;
+}
+
+/* Puts a CourtReserve widget (link OR pasted embed code) into a box. Scripts in pasted code are re-created so they run. */
+function mountEmbed(box, val){
+  val = String(val).trim();
+  if(val.startsWith('<')){
+    const wrap = document.createElement('div'); wrap.className = 'embed'; wrap.innerHTML = val;
+    wrap.querySelectorAll('script').forEach(old => {
+      const s = document.createElement('script');
+      [...old.attributes].forEach(a => s.setAttribute(a.name, a.value));
+      s.textContent = old.textContent; old.replaceWith(s);
+    });
+    box.appendChild(wrap);
+  } else if(/courtreserve\.com/i.test(val)){
+    mountCourtReserve(box, val);
+  } else if(val){
+    const f = document.createElement('iframe'); f.src = val; box.appendChild(f);
+  }
+}
+
+/* Court screenshots: a GitHub Action photographs the CourtReserve widgets every 30 minutes and
+   publishes them to the 'shots' branch. Showing a picture is instant; the live widget is the fallback. */
+const SHOTS_BASE = 'https://raw.githubusercontent.com/PicklBalR1965/DPVT/shots/';
+const SHOTS = { ok:false, ts:0 };
+const BOARD = { ok:false, widgets:null };
+const PHONE_KEYS = { '21564':'indoor', '106548':'outdoor1', '106549':'outdoor2' };
+function loadShotsMeta(){
+  return new Promise(resolve => {
+    try{
+      fetch(SHOTS_BASE + 'meta.json?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).then(m => {
+        const ts = Number(m.ts) || 0;
+        SHOTS.ts = ts; SHOTS.ok = !!ts && (Date.now() - ts) < 3 * 3600 * 1000;
+        setUpdatedLabel();
+        loadBoard().then(resolve);
+      }).catch(() => { SHOTS.ok = false; resolve(); });
+    }catch(e){ SHOTS.ok = false; resolve(); }
+  });
+}
+function loadBoard(){
+  return fetch(SHOTS_BASE + 'courts.json?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).then(b => {
+    const w = b.widgets || {}, ids = ['21564','106548','106549'];
+    BOARD.ok = ids.every(id => w[id] && w[id].ts && (Date.now() - w[id].ts) < 3 * 3600 * 1000);
+    BOARD.widgets = w;
+    BOARD.ts = Math.min.apply(null, ids.map(id => (w[id] && w[id].ts) || 0));
+  }).catch(() => { BOARD.ok = false; });
+}
+setInterval(() => { loadBoard().then(() => { document.querySelectorAll('.slide.board').forEach(drawBoard); setUpdatedLabel(); }); }, 5 * 60 * 1000);
+
+function minsNow(){ const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+function fmtMin(m){ const h = Math.floor(m / 60) % 24, mm = m % 60; return ((h % 12) || 12) + (mm ? ':' + (mm < 10 ? '0' : '') + mm : '') + (h >= 12 ? ' PM' : ' AM'); }
+function courtName(code){
+  const m = String(code).match(/^([A-Z]{2})0*(\d+)$/); if(!m) return code;
+  return 'Court ' + m[2];
+}
+function shortCat(e){
+  let t = String(e.cat || e.title || '');
+  t = t.replace(/^(Outdoor|Indoor)\s+/i, '').replace(/^Group Play:\s*/i, 'Group Play · ');
+  return t.replace(/\s*\(.*$/, '').trim();
+}
+function evKind(e){
+  const t = (e.cat + ' ' + e.title).toLowerCase();
+  if(/unavailable/.test(t)) return 'closed';
+  if(/private|rental/.test(t)) return 'priv';
+  if(/league/.test(t)) return 'league';
+  return 'play';
+}
+function courtCard(code, evs, now, area, grp){
+  const cur = evs.filter(e => e.s <= now && now < e.e).sort((a, b) => a.s - b.s)[0];
+  const nxt = evs.filter(e => e.s > now).sort((a, b) => a.s - b.s)[0];
+  let cls = 'open', st = 'Open', tt = '', un = '';
+  if(cur){
+    cls = evKind(cur);
+    if(cls === 'closed'){ st = 'Closed'; un = 'Until ' + fmtMin(cur.e); }
+    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); un = 'Until ' + fmtMin(cur.e); }
+  } else {
+    tt = '';
+    if(nxt) un = evKind(nxt) === 'closed' ? 'Until ' + fmtMin(nxt.s) : 'Next ' + fmtMin(nxt.s);
+  }
+  return `<div class="bc ${cls} ${grp}" style="grid-area:${area}"><div class="crt"></div><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
+}
+function drawBoard(el){
+  if(!el || !BOARD.widgets) return;
+  const now = minsNow(), w = BOARD.widgets, all = {};
+  Object.keys(w).forEach(id => (w[id].courts || []).forEach(c => { all[c] = w[id].ev[c] || []; }));
+  const codes = Object.keys(all), ic = codes.filter(c => /^IC/.test(c)).sort(), oc = codes.filter(c => /^OC/.test(c)).sort();
+  const o1 = oc.filter(c => parseInt(c.slice(2), 10) <= 12), o2 = oc.filter(c => parseInt(c.slice(2), 10) > 12);
+  // one shared grid so every court card is exactly the same size
+  const out = [];
   out.push(`<h2 class="gi" style="grid-area:1/1/2/7">Indoor · PickleBarn · 1–5</h2>`);
   ic.forEach((c, k) => out.push(courtCard(c, all[c], now, `2/${k + 1}`, 'gi')));
   out.push(`<h2 class="g1 sep" style="grid-area:3/1/4/7">Outdoor · 1–12</h2>`);
