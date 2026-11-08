@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Who's Playing · Doylestown Pickleball</title>
+<meta name="theme-color" content="#03070a">
+<link rel="icon" href="logo.png">
+<style>
+  :root{--navy:#1D4A62;--teal:#2198A1;--teal-lt:#4fbfc7;--ink:#eef5f7;--muted:#a3b8c2;--bg:#03070a;--card:#0a1922;--line:#163242}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"PT Sans",Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;min-height:100vh;padding:0 0 40px}
+  header{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(3,7,10,.95);z-index:5;backdrop-filter:blur(6px)}
+  header img{width:46px;height:46px;border-radius:50%}
+  header h1{font-size:22px;line-height:1.1}
+  header .sub{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--teal-lt);margin-top:3px}
+  header .clock{margin-left:auto;text-align:right}
+  header .clock b{font-size:24px;display:block;font-variant-numeric:tabular-nums}
+  header .clock span{font-size:12px;color:var(--muted)}
+  main{max-width:1100px;margin:0 auto;padding:14px 14px 0}
+  .upd{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-lt);margin:4px 2px 2px}
+  .upd i{width:9px;height:9px;border-radius:50%;background:var(--teal);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  h2{font-size:15px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;margin:22px 2px 10px}
+  h2.gi{color:#f5b83d} h2.g1{color:#ff7a5c} h2.g2{color:#ff6fb5}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .bc{position:relative;height:104px;background:#050d13;border:3px solid var(--bd);border-radius:10px;padding:8px 10px 9px 12px;display:flex;flex-direction:column;overflow:hidden;--surf:#1f6d8c;--kit:#195a75}
+  .bc .crt{position:absolute;inset:4px;border:2px solid var(--bd);border-radius:2px;z-index:0;
+    background:
+      repeating-linear-gradient(0deg,rgba(255,255,255,.28) 0 3px,transparent 3px 6px) 50% 0/4px 100% no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 34% 0/2px 100% no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 66% 0/2px 100% no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 0 50%/34% 2px no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 100% 50%/34% 2px no-repeat,
+      linear-gradient(to right,transparent 34%,var(--kit) 34%,var(--kit) 66%,transparent 66%),
+      var(--surf)}
+  .bc > div:not(.crt){position:relative;z-index:1;text-shadow:0 1px 5px rgba(0,0,0,.95),0 0 2px rgba(0,0,0,.8)}
+  .bc .cn{font-size:22px;font-weight:700;line-height:1;color:#fff;white-space:nowrap}
+  .bc .st{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;color:#fff}
+  .bc .tt{font-size:13px;line-height:1.1;margin-top:2px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bc .un{margin-top:auto;font-size:14px;font-weight:700;color:#fff}
+  .gi{--bd:#f5b83d} .g1{--bd:#ff7a5c} .g2{--bd:#ff6fb5}
+  .bc.open{--surf:#23805f;--kit:#1b6a4f}
+  .bc.play{--surf:#13808b;--kit:#0e6973}
+  .bc.league{--surf:#5f43ad;--kit:#4c3590}
+  .bc.priv{--surf:#2f58c7;--kit:#2749a6}
+  .bc.closed{--surf:#2b3a44;--kit:#24323b;opacity:.65}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:22px 2px 0;font-size:13px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:18px;height:12px;border-radius:2px;border:1.5px solid rgba(255,255,255,.6)}
+  .msg{margin:30px 0;text-align:center;color:var(--muted);line-height:1.5}
+  footer{max-width:1100px;margin:26px auto 0;padding:0 16px;color:var(--muted);font-size:13px;line-height:1.6}
+  footer a{color:var(--teal-lt)}
+  @media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))} .bc{height:120px} .bc .cn{font-size:25px} .bc .un{font-size:15px} header h1{font-size:26px}}
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="Doylestown Pickleball">
+  <div><h1>Who's Playing</h1><div class="sub">Doylestown Pickleball</div></div>
+  <div class="clock"><b id="clk">--:--</b><span id="dte"></span></div>
+</header>
+<main>
+  <div class="upd"><i></i><span id="upd">Loading…</span></div>
+  <div id="board"><div class="msg">Loading courts…</div></div>
+  <div class="legend">
+    <span><i style="background:#23805f"></i>Open</span><span><i style="background:#13808b"></i>Group play</span>
+    <span><i style="background:#5f43ad"></i>League</span><span><i style="background:#2f58c7"></i>Reserved</span><span><i style="background:#2b3a44"></i>Closed</span>
+  </div>
+</main>
+<footer>
+  Court info refreshes about every 30 minutes. To reserve a court or join group play, visit
+  <a href="https://www.doylestownpickleball.com">doylestownpickleball.com</a> or text 267-362-9619.
+</footer>
+<script>
+var BASE = 'https://raw.githubusercontent.com/PicklBalR1965/DPVT/shots/';
+var IDS = ['21564','106548','106549'];
+var DATA = null, TS = 0, FRESH = false;
+
+function nyNow(){
+  try{
+    var p = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());
+    var h = 0, m = 0;
+    p.forEach(function(x){ if(x.type==='hour') h = Number(x.value) % 24; if(x.type==='minute') m = Number(x.value); });
+    return h*60+m;
+  }catch(e){ var d = new Date(); return d.getHours()*60+d.getMinutes(); }
+}
+function fmt(m){ var h = Math.floor(m/60)%24, mm = m%60; return ((h%12)||12)+(mm?':'+(mm<10?'0':'')+mm:'')+(h>=12?' PM':' AM'); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function shortCat(e){ return String(e.cat||e.title||'').replace(/^(Outdoor|Indoor)\s+/i,'').replace(/^Group Play:\s*/i,'Group Play · ').replace(/\s*\(.*$/,'').trim(); }
+function kind(e){
+  var t = (e.cat+' '+e.title).toLowerCase();
+  if(/unavailable/.test(t)) return 'closed';
+  if(/private|rental/.test(t)) return 'priv';
+  if(/league/.test(t)) return 'league';
+  return 'play';
+}
+function card(code, evs, now, grp){
+  var m = String(code).match(/(\d+)$/), name = 'Court ' + (m ? Number(m[1]) : code);
+  var cur = evs.filter(function(e){ return e.s <= now && now < e.e; }).sort(function(a,b){ return a.s-b.s; })[0];
+  var nxt = evs.filter(function(e){ return e.s > now; }).sort(function(a,b){ return a.s-b.s; })[0];
+  var cls = 'open', st = 'Open', tt = '', un = '';
+  if(cur){
+    cls = kind(cur); un = 'Until ' + fmt(cur.e);
+    if(cls === 'closed') st = 'Closed';
+    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); }
+  } else if(nxt){
+    un = kind(nxt) === 'closed' ? 'Until ' + fmt(nxt.s) : 'Next ' + fmt(nxt.s);
+  }
+  return '<div class="bc '+cls+' '+grp+'"><div class="crt"></div><div><div class="cn">'+esc(name)+'</div><div class="st">'+st+'</div></div><div class="tt">'+esc(tt)+'</div><div class="un">'+esc(un)+'</div></div>';
+}
+function draw(){
+  var el = document.getElementById('board');
+  if(!DATA){ return; }
+  var now = nyNow(), all = {};
+  IDS.forEach(function(id){ var w = DATA[id]; if(!w) return; (w.courts||[]).forEach(function(c){ all[c] = (w.ev||{})[c] || []; }); });
+  var codes = Object.keys(all);
+  var ic = codes.filter(function(c){ return /^IC/.test(c); }).sort(),
+      oc = codes.filter(function(c){ return /^OC/.test(c); }).sort();
+  var o1 = oc.filter(function(c){ return parseInt(c.slice(2),10) <= 12; }), o2 = oc.filter(function(c){ return parseInt(c.slice(2),10) > 12; });
+  function sect(title, cls, list){ return list.length ? '<h2 class="'+cls+'">'+title+'</h2><div class="grid">'+list.map(function(c){ return card(c, all[c], now, cls); }).join('')+'</div>' : ''; }
+  el.innerHTML = sect('Indoor · PickleBarn · 1–5','gi',ic) + sect('Outdoor · 1–12','g1',o1) + sect('Outdoor · 13–16','g2',o2);
+  if(!codes.length) el.innerHTML = '<div class="msg">No court data right now. Please check back soon.</div>';
+}
+function clock(){
+  var d = new Date();
+  document.getElementById('clk').textContent = d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+  document.getElementById('dte').textContent = d.toLocaleDateString([], {weekday:'long',month:'short',day:'numeric',timeZone:'America/New_York'});
+}
+function label(){
+  var u = document.getElementById('upd');
+  if(!DATA){ u.textContent = 'Loading…'; return; }
+  var t = new Date(TS).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+  u.textContent = FRESH ? 'Updated ' + t : 'Last updated ' + t + ' (may be out of date)';
+}
+function load(){
+  fetch(BASE + 'courts.json?t=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(b){
+    var w = b.widgets || {}; DATA = w;
+    TS = Math.min.apply(null, IDS.map(function(id){ return (w[id] && w[id].ts) || 0; }));
+    FRESH = TS && (Date.now() - TS) < 3*3600*1000;
+    draw(); label();
+  }).catch(function(){
+    if(!DATA) document.getElementById('board').innerHTML = '<div class="msg">Could not load court info. Please try again in a minute.</div>';
+  });
+}
+clock(); load();
+setInterval(clock, 20000);
+setInterval(draw, 60000);
+setInterval(load, 5*60000);
+</script>
+</body>
+</html>
