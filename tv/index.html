@@ -154,7 +154,12 @@
 
   /* Right-now board: every court at a glance */
   .slide.courts.board{gap:.7vw}
-  .boardWrap{flex:1;display:flex;flex-direction:column;gap:.9vw;min-height:0}
+  .boardWrap{flex:1;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:auto minmax(0,1fr) auto minmax(0,1fr) minmax(0,1fr);gap:.7vw;min-height:0}
+  .boardWrap h2{font-size:1.6vw;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-lt);font-weight:700;white-space:nowrap;align-self:end;margin-top:.3vw}
+  .legend{display:flex;flex-direction:column;justify-content:center;gap:.5vw;border:1px solid var(--line);border-radius:.6vw;padding:.8vw 1.2vw;font-size:1.45vw;color:var(--ink)}
+  .legend b{font-size:1.2vw;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-lt)}
+  .legend span{display:flex;align-items:center;gap:.7vw}
+  .legend i{width:1.6vw;height:1.1vw;border-radius:.15vw;border:.12vw solid rgba(255,255,255,.75);flex:none}
   .bgroup{display:flex;flex-direction:column;gap:.4vw;min-height:0}
   .brow{flex:2;display:flex;gap:1.6vw;min-height:0}
   .bgroup.o1{flex:6}
@@ -482,7 +487,7 @@ function evKind(e){
   if(/league/.test(t)) return 'league';
   return 'play';
 }
-function courtCard(code, evs, now){
+function courtCard(code, evs, now, area){
   const cur = evs.filter(e => e.s <= now && now < e.e).sort((a, b) => a.s - b.s)[0];
   const nxt = evs.filter(e => e.s > now).sort((a, b) => a.s - b.s)[0];
   let cls = 'open', st = 'Open', tt = '', un = '';
@@ -494,19 +499,24 @@ function courtCard(code, evs, now){
     tt = '';
     if(nxt) un = evKind(nxt) === 'closed' ? 'Until ' + fmtMin(nxt.s) : 'Next ' + fmtMin(nxt.s);
   }
-  return `<div class="bc ${cls}"><div class="crt"></div><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
+  return `<div class="bc ${cls}" style="grid-area:${area}"><div class="crt"></div><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
 }
 function drawBoard(el){
   if(!el || !BOARD.widgets) return;
   const now = minsNow(), w = BOARD.widgets, all = {};
   Object.keys(w).forEach(id => (w[id].courts || []).forEach(c => { all[c] = w[id].ev[c] || []; }));
   const codes = Object.keys(all), ic = codes.filter(c => /^IC/.test(c)).sort(), oc = codes.filter(c => /^OC/.test(c)).sort();
-  const cards = list => list.map(c => courtCard(c, all[c], now)).join('');
   const o1 = oc.filter(c => parseInt(c.slice(2), 10) <= 12), o2 = oc.filter(c => parseInt(c.slice(2), 10) > 12);
-  el.querySelector('.boardWrap').innerHTML =
-    `<div class="bgroup ind"><h2>Indoor · PickleBarn · 1–5</h2><div class="bgrid g5">${cards(ic)}</div></div>` +
-    `<div class="brow"><div class="bgroup o1"><h2>Outdoor · 1–12</h2><div class="bgrid g6">${cards(o1)}</div></div>` +
-    `<div class="bgroup o2"><h2>Outdoor · 13–16</h2><div class="bgrid g2">${cards(o2)}</div></div></div>`;
+  // one shared grid so every court card is exactly the same size: rows = [heading, indoor, heading, outdoor, outdoor]
+  const out = [];
+  out.push(`<h2 style="grid-area:1/1/2/7">Indoor · PickleBarn · 1–5</h2>`);
+  ic.forEach((c, k) => out.push(courtCard(c, all[c], now, `2/${k + 1}`)));
+  out.push(`<h2 style="grid-area:3/1/4/7">Outdoor · 1–12</h2>`);
+  o1.forEach((c, k) => out.push(courtCard(c, all[c], now, `${4 + Math.floor(k / 6)}/${(k % 6) + 1}`)));
+  out.push(`<h2 style="grid-area:3/7/4/9">Outdoor · 13–16</h2>`);
+  o2.forEach((c, k) => out.push(courtCard(c, all[c], now, `${4 + Math.floor(k / 2)}/${(k % 2) + 7}`)));
+  out.push(`<div class="legend" style="grid-area:1/7/3/9"><b>Key</b><span><i style="background:#23805f"></i>Open</span><span><i style="background:#13808b"></i>Group play</span><span><i style="background:#5f43ad"></i>League</span><span><i style="background:#2f58c7"></i>Reserved</span><span><i style="background:#2b3a44"></i>Closed</span></div>`);
+  el.querySelector('.boardWrap').innerHTML = out.join('');
 }
 setInterval(() => document.querySelectorAll('.slide.board').forEach(drawBoard), 60 * 1000);
 
