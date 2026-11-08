@@ -22,20 +22,26 @@ function relabel() {
 
 (async () => {
   fs.mkdirSync('out', { recursive: true });
+  // start from the last published files so a failed capture never wipes a good picture
+  try { fs.readdirSync('prev').filter(f => /^(courts-.*\.jpg|meta\.json)$/.test(f)).forEach(f => fs.copyFileSync('prev/' + f, 'out/' + f)); } catch (e) {}
+  const log = [];
+  const note = m => { console.log(m); log.push(m); };
   let prev = {};
   try { prev = JSON.parse(fs.readFileSync('prev/meta.json', 'utf8')).shots || {}; } catch (e) {}
   const shots = Object.assign({}, prev);
 
   const browser = await chromium.launch();
   const ctx = await browser.newContext({
-    viewport: { width: 1600, height: 1520 }, timezoneId: 'America/New_York', locale: 'en-US'
+    viewport: { width: 1600, height: 1520 }, timezoneId: 'America/New_York', locale: 'en-US',
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
   });
   let ok = 0;
   for (const id of IDS) {
     const page = await ctx.newPage();
     try {
+      // 'networkidle' never happens here (the widget keeps a live connection open), so wait for the DOM instead
       await page.goto(`https://widgets.courtreserve.com/Online/Public/EmbedCode/${ORG}/${id}`,
-        { waitUntil: 'networkidle', timeout: 45000 });
+        { waitUntil: 'domcontentloaded', timeout: 45000 });
       await page.waitForSelector('#CourtsScheduler .k-scheduler-content', { timeout: 30000 });
       await page.waitForTimeout(4000);
       await page.addStyleTag({ content: '.k-current-time,.k-current-time-arrow,.k-scheduler-now-arrow{display:none!important}' });
@@ -44,17 +50,20 @@ function relabel() {
       await page.screenshot({ path: `out/courts-${id}.jpg`, type: 'jpeg', quality: 80 });
       shots[id] = Date.now();
       ok++;
-      console.log('captured', id);
+      note('captured ' + id);
     } catch (e) {
-      console.error('FAILED', id, e.message);
-      if (fs.existsSync(`prev/courts-${id}.jpg`) && !fs.existsSync(`out/courts-${id}.jpg`)) {
-        fs.copyFileSync(`prev/courts-${id}.jpg`, `out/courts-${id}.jpg`);   // keep the last good picture
-      }
+      note('FAILED ' + id + ': ' + e.message.split('\n')[0]);
+      try {   // leave clues so a failure can be diagnosed from the published branch
+        await page.screenshot({ path: `out/debug-${id}.png` });
+        const txt = await page.evaluate(() => document.title + ' | ' + (document.body ? document.body.innerText : '').slice(0, 400));
+        note('page ' + id + ': ' + txt.replace(/\s+/g, ' '));
+      } catch (e2) { note('no debug for ' + id + ': ' + e2.message.split('\n')[0]); }
     }
     await page.close();
   }
   await browser.close();
-  if (!ok) process.exit(1);                         // nothing new: leave the published pictures alone
+  fs.writeFileSync('out/log.txt', log.join('\n') + '\n');
+  if (!ok) process.exit(1);                         // nothing new: the old pictures stay published
 
   // "ts" is the OLDEST picture, so the TV never claims a screen is fresher than it is
   const times = IDS.map(id => shots[id] || 0);

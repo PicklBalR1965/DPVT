@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '*/30 9-23,0-3 * * *'    # every 30 min, roughly 5am-midnight Eastern
   workflow_dispatch:
+  push:
+    paths:
+      - 'tools/court-shots.js'
+      - '.github/workflows/court-shots.yml'
 
 permissions:
   contents: write
@@ -35,6 +39,7 @@ jobs:
         run: node tools/court-shots.js
 
       - name: Publish to the shots branch
+        if: always()
         run: |
           cd out
           git init -q -b shots
