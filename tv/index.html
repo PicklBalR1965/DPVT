@@ -173,20 +173,20 @@
   .bgrid.g2{grid-template-columns:repeat(2,1fr);grid-template-rows:1fr 1fr}
   /* each card is a little top-down pickleball court: kitchen lines, centre lines and the net */
   .bc{position:relative;background:#050d13;border:.3vw solid var(--bd,#0e2230);border-radius:.6vw;padding:.55vw 1vw .6vw 1.1vw;display:flex;flex-direction:column;justify-content:flex-start;min-width:0;overflow:hidden;--surf:#1f6d8c;--kit:#195a75}
-  .bc .crt{position:absolute;inset:.35vw;border:.2vw solid var(--bd,rgba(255,255,255,.75));border-radius:.15vw;z-index:0;
+  .bc .crt{position:absolute;inset:.35vw;border:.14vw solid var(--bd,rgba(255,255,255,.4));opacity:1;border-radius:.15vw;z-index:0;
     background:
-      repeating-linear-gradient(0deg,rgba(255,255,255,.8) 0 .22vw,transparent .22vw .44vw) 50% 0/.26vw 100% no-repeat,
-      linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 34% 0/.13vw 100% no-repeat,
-      linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 66% 0/.13vw 100% no-repeat,
-      linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 0 50%/34% .13vw no-repeat,
-      linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.55)) 100% 50%/34% .13vw no-repeat,
+      repeating-linear-gradient(0deg,rgba(255,255,255,.28) 0 .22vw,transparent .22vw .44vw) 50% 0/.26vw 100% no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 34% 0/.13vw 100% no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 66% 0/.13vw 100% no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 0 50%/34% .13vw no-repeat,
+      linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)) 100% 50%/34% .13vw no-repeat,
       linear-gradient(to right,transparent 34%,var(--kit) 34%,var(--kit) 66%,transparent 66%),
       var(--surf)}
   .bc > div:not(.crt){position:relative;z-index:1;text-shadow:0 .08vw .35vw rgba(0,0,0,.95),0 0 .15vw rgba(0,0,0,.8)}
-  .bc .cn{font-size:2.1vw;font-weight:700;line-height:1;white-space:nowrap;color:#fff}
-  .bc .st{font-size:1.2vw;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.2vw;color:#fff}
+  .bc .cn{font-size:1.95vw;font-weight:700;line-height:1;white-space:nowrap;color:#fff}
+  .bc .st{font-size:1.1vw;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.2vw;color:#fff}
   .bc .tt{font-size:1.15vw;line-height:1.1;margin-top:.15vw;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
-  .bc .un{margin-top:auto;font-size:1.4vw;font-weight:700;color:#fff;line-height:1.1}
+  .bc .un{margin-top:auto;font-size:1.3vw;font-weight:700;color:#fff;line-height:1.1}
   .gi{--bd:#f5b83d} .g1{--bd:#ff7a5c} .g2{--bd:#ff6fb5}
   .boardWrap h2.gi,.boardWrap h2.g1,.boardWrap h2.g2{color:var(--bd)}
   .bc.open{--surf:#23805f;--kit:#1b6a4f}
