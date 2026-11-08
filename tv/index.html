@@ -434,7 +434,8 @@ function mountCourtReserve(box, url){
 }
 function mountLive(box, url){
   box.innerHTML = '<div class="cr head"><iframe scrolling="no"></iframe></div><div class="cr body"><iframe scrolling="no"></iframe></div>';
-  box.querySelectorAll('iframe').forEach(f => { f.dataset.src = url; f.src = url; f.style.width = CR.w + 'px'; f.style.height = CR.h + 'px'; });
+  // iframes start empty: next() loads only the current + upcoming court screen, so the TV never holds many widgets at once
+  box.querySelectorAll('iframe').forEach(f => { f.dataset.src = url; f.dataset.loaded = ''; f.style.width = CR.w + 'px'; f.style.height = CR.h + 'px'; });
   box._crLayout = () => layoutCourtReserve(box);
   layoutCourtReserve(box);
 }
@@ -444,7 +445,8 @@ function mountShot(box, id, url){
     im.dataset.base = SHOTS_BASE + 'courts-' + id + '.jpg';
     im.src = im.dataset.base + '?t=' + SHOTS.ts;
     im.style.width = CR.w + 'px'; im.style.height = CR.h + 'px';
-    im.onerror = () => { SHOTS.ok = false; setUpdatedLabel(); mountLive(box, url); };
+    im.onerror = () => { SHOTS.ok = false; setUpdatedLabel(); mountLive(box, url);
+      box.querySelectorAll('iframe').forEach(f => { f.src = f.dataset.src + '?t=' + Date.now(); f.dataset.loaded = '1'; }); };
   });
   box._crLayout = () => layoutCourtReserve(box);
   layoutCourtReserve(box);
@@ -578,13 +580,18 @@ function next(){
   const cur = sg[idx].firstChild;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{ cur.style.transition = `width ${secs}s linear`; cur.style.width = '100%'; }));
   document.getElementById('nextTitle').textContent = slides[(idx + 1) % slides.length].title || '';
-  // Reload the CourtReserve widget one slide early so it opens fresh, scrolled to the current time
+  // Load the CourtReserve widget one slide early; unload every other court screen to keep the TV light
   const upcoming = els[(idx + 1) % els.length];
-  if(upcoming && upcoming !== els[idx]){
-    upcoming.querySelectorAll('.courtsBody iframe').forEach(f => {
-      const base = f.dataset.src || f.src; f.dataset.src = base;
-      f.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+  els.forEach((e, i) => {
+    if(!e.classList.contains('courts')) return;
+    const keep = (i === idx) || (e === upcoming);
+    e.querySelectorAll('.courtsBody iframe').forEach(f => {
+      if(keep){
+        if(!f.dataset.loaded){ const base = f.dataset.src; f.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(); f.dataset.loaded = '1'; }
+      } else if(f.dataset.loaded){ f.src = 'about:blank'; f.dataset.loaded = ''; }
     });
+  });
+  if(upcoming && upcoming !== els[idx]){
     upcoming.querySelectorAll('.courtsBody img').forEach(im => { if(im.dataset.base) im.src = im.dataset.base + '?t=' + SHOTS.ts; });
     const cb = upcoming.querySelector('.courtsBody'); if(cb && cb._crLayout) cb._crLayout();
   }
