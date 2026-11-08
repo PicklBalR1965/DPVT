@@ -156,12 +156,15 @@
   .slide.courts.board{gap:.7vw}
   .boardWrap{flex:1;display:flex;flex-direction:column;gap:.9vw;min-height:0}
   .bgroup{display:flex;flex-direction:column;gap:.4vw;min-height:0}
-  .bgroup.out{flex:2}
+  .brow{flex:2;display:flex;gap:1.6vw;min-height:0}
+  .bgroup.o1{flex:6}
+  .bgroup.o2{flex:2}
   .bgroup.ind{flex:1}
   .bgroup h2{font-size:1.6vw;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-lt);font-weight:700}
   .bgrid{flex:1;display:grid;gap:.6vw;min-height:0}
   .bgrid.g5{grid-template-columns:repeat(5,1fr);grid-template-rows:1fr}
-  .bgrid.g8{grid-template-columns:repeat(8,1fr);grid-template-rows:1fr 1fr}
+  .bgrid.g6{grid-template-columns:repeat(6,1fr);grid-template-rows:1fr 1fr}
+  .bgrid.g2{grid-template-columns:repeat(2,1fr);grid-template-rows:1fr 1fr}
   /* each card is a little top-down pickleball court: kitchen lines, centre lines and the net */
   .bc{position:relative;background:#050d13;border:1px solid #0e2230;border-radius:.6vw;padding:1vw 1.2vw;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden;--surf:#1f6d8c;--kit:#195a75}
   .bc .crt{position:absolute;inset:.4vw;border:.16vw solid rgba(255,255,255,.75);border-radius:.15vw;z-index:0;
@@ -499,9 +502,11 @@ function drawBoard(el){
   Object.keys(w).forEach(id => (w[id].courts || []).forEach(c => { all[c] = w[id].ev[c] || []; }));
   const codes = Object.keys(all), ic = codes.filter(c => /^IC/.test(c)).sort(), oc = codes.filter(c => /^OC/.test(c)).sort();
   const cards = list => list.map(c => courtCard(c, all[c], now)).join('');
+  const o1 = oc.filter(c => parseInt(c.slice(2), 10) <= 12), o2 = oc.filter(c => parseInt(c.slice(2), 10) > 12);
   el.querySelector('.boardWrap').innerHTML =
-    `<div class="bgroup ind"><h2>Indoor · PickleBarn (Courts 1–5)</h2><div class="bgrid g5">${cards(ic)}</div></div>` +
-    `<div class="bgroup out"><h2>Outdoor (Courts 1–16)</h2><div class="bgrid g8">${cards(oc)}</div></div>`;
+    `<div class="bgroup ind"><h2>Indoor · PickleBarn · Courts 1–5</h2><div class="bgrid g5">${cards(ic)}</div></div>` +
+    `<div class="brow"><div class="bgroup o1"><h2>Outdoor · Courts 1–12</h2><div class="bgrid g6">${cards(o1)}</div></div>` +
+    `<div class="bgroup o2"><h2>Outdoor · Courts 13–16</h2><div class="bgrid g2">${cards(o2)}</div></div></div>`;
 }
 setInterval(() => document.querySelectorAll('.slide.board').forEach(drawBoard), 60 * 1000);
 
