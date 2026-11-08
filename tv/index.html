@@ -151,6 +151,27 @@
   .cr.body iframe,.cr.body img{transition:transform 1.5s ease}
   .courtsBody .embed{position:absolute;inset:0;overflow:hidden}
 
+
+  /* Right-now board: every court at a glance */
+  .slide.courts.board{gap:.7vw}
+  .boardWrap{flex:1;display:flex;flex-direction:column;gap:.9vw;min-height:0}
+  .bgroup{display:flex;flex-direction:column;gap:.4vw;min-height:0}
+  .bgroup.out{flex:2}
+  .bgroup.ind{flex:1}
+  .bgroup h2{font-size:1.15vw;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-lt);font-weight:700}
+  .bgrid{flex:1;display:grid;gap:.6vw;min-height:0}
+  .bgrid.g5{grid-template-columns:repeat(5,1fr);grid-template-rows:1fr}
+  .bgrid.g8{grid-template-columns:repeat(8,1fr);grid-template-rows:1fr 1fr}
+  .bc{background:var(--card);border:1px solid var(--line);border-left:.45vw solid var(--dim);border-radius:.6vw;padding:.55vw .7vw;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden}
+  .bc .cn{font-size:1.5vw;font-weight:700;line-height:1}
+  .bc .st{font-size:1.05vw;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-top:.25vw}
+  .bc .tt{font-size:1.25vw;line-height:1.12;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .bc .un{font-size:1.1vw;color:var(--muted);line-height:1.15}
+  .bc.play{border-left-color:var(--teal)} .bc.play .st{color:var(--teal-lt)}
+  .bc.league{border-left-color:#9b6bff} .bc.league .st{color:#b99bff}
+  .bc.priv{border-left-color:var(--blue)} .bc.priv .st{color:#7fa6ff}
+  .bc.open{border-left-color:#3fb67a} .bc.open .st{color:#6fd6a0}
+  .bc.closed{opacity:.55} .bc.closed .st{color:var(--dim)}
   .courtsRow{flex:1;display:flex;gap:.8vw;min-height:0}
   .takeQr{width:11vw;flex:none;align-self:flex-end;text-align:center;background:var(--card);border:1px solid var(--line);
     border-radius:.8vw;padding:.8vw;line-height:1.2}
@@ -316,7 +337,9 @@ function arrange(list){
   if(!courts.length || !other.length) return list;
   const out = [];
   // Courts screens take turns (Indoor -> Outdoor 1-12 -> Outdoor 13-16 ...) after every 2 other slides
-  const seen = {}, uniq = courts.filter(c => { const k = String(c.link || c.url || ''); return seen[k] ? false : (seen[k] = 1); });
+  const seen = {};
+  let uniq = courts.filter(c => { const k = String(c.link || c.url || ''); return seen[k] ? false : (seen[k] = 1); });
+  if(BOARD.ok) uniq = [Object.assign({}, courts[0], {type:'board', title:"Who's on the Courts", link:'', secs:courts[0].secs || 30})];
   let ci = 0;
   other.forEach((x, i) => { out.push(x); if(i % 2 === 1) out.push(uniq[ci++ % uniq.length]); });
   if(other.length % 2 === 1) out.push(uniq[ci++ % uniq.length]);
@@ -403,6 +426,7 @@ function mountEmbed(box, val){
    publishes them to the 'shots' branch. Showing a picture is instant; the live widget is the fallback. */
 const SHOTS_BASE = 'https://raw.githubusercontent.com/PicklBalR1965/DPVT/shots/';
 const SHOTS = { ok:false, ts:0 };
+const BOARD = { ok:false, widgets:null };
 const PHONE_KEYS = { '21564':'indoor', '106548':'outdoor1', '106549':'outdoor2' };
 function loadShotsMeta(){
   return new Promise(resolve => {
@@ -410,14 +434,70 @@ function loadShotsMeta(){
       fetch(SHOTS_BASE + 'meta.json?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).then(m => {
         const ts = Number(m.ts) || 0;
         SHOTS.ts = ts; SHOTS.ok = !!ts && (Date.now() - ts) < 3 * 3600 * 1000;
-        setUpdatedLabel(); resolve();
+        setUpdatedLabel();
+        loadBoard().then(resolve);
       }).catch(() => { SHOTS.ok = false; resolve(); });
     }catch(e){ SHOTS.ok = false; resolve(); }
   });
 }
+function loadBoard(){
+  return fetch(SHOTS_BASE + 'courts.json?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).then(b => {
+    const w = b.widgets || {}, ids = ['21564','106548','106549'];
+    BOARD.ok = ids.every(id => w[id] && w[id].ts && (Date.now() - w[id].ts) < 3 * 3600 * 1000);
+    BOARD.widgets = w;
+    BOARD.ts = Math.min.apply(null, ids.map(id => (w[id] && w[id].ts) || 0));
+  }).catch(() => { BOARD.ok = false; });
+}
+setInterval(() => { loadBoard().then(() => { document.querySelectorAll('.slide.board').forEach(drawBoard); setUpdatedLabel(); }); }, 5 * 60 * 1000);
+
+function minsNow(){ const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+function fmtMin(m){ const h = Math.floor(m / 60) % 24, mm = m % 60; return ((h % 12) || 12) + ':' + (mm < 10 ? '0' : '') + mm + ' ' + (h >= 12 ? 'PM' : 'AM'); }
+function courtName(code){
+  const m = String(code).match(/^([A-Z]{2})0*(\d+)$/); if(!m) return code;
+  return (m[1] === 'IC' ? 'Indoor ' : 'Outdoor ') + m[2];
+}
+function shortCat(e){
+  let t = String(e.cat || e.title || '');
+  t = t.replace(/^(Outdoor|Indoor)\s+/i, '').replace(/^Group Play:\s*/i, 'Group Play · ');
+  return t;
+}
+function evKind(e){
+  const t = (e.cat + ' ' + e.title).toLowerCase();
+  if(/unavailable/.test(t)) return 'closed';
+  if(/private|rental/.test(t)) return 'priv';
+  if(/league/.test(t)) return 'league';
+  return 'play';
+}
+function courtCard(code, evs, now){
+  const cur = evs.filter(e => e.s <= now && now < e.e).sort((a, b) => a.s - b.s)[0];
+  const nxt = evs.filter(e => e.s > now).sort((a, b) => a.s - b.s)[0];
+  let cls = 'open', st = 'Open', tt = '', un = '';
+  if(cur){
+    cls = evKind(cur);
+    if(cls === 'closed'){ st = 'Closed'; un = 'Until ' + fmtMin(cur.e); }
+    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); un = 'Until ' + fmtMin(cur.e); }
+  } else {
+    tt = 'Open court';
+    if(nxt) un = evKind(nxt) === 'closed' ? 'Open until ' + fmtMin(nxt.s) : 'Next: ' + fmtMin(nxt.s);
+  }
+  return `<div class="bc ${cls}"><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
+}
+function drawBoard(el){
+  if(!el || !BOARD.widgets) return;
+  const now = minsNow(), w = BOARD.widgets, all = {};
+  Object.keys(w).forEach(id => (w[id].courts || []).forEach(c => { all[c] = w[id].ev[c] || []; }));
+  const codes = Object.keys(all), ic = codes.filter(c => /^IC/.test(c)).sort(), oc = codes.filter(c => /^OC/.test(c)).sort();
+  const cards = list => list.map(c => courtCard(c, all[c], now)).join('');
+  el.querySelector('.boardWrap').innerHTML =
+    `<div class="bgroup ind"><h2>Indoor · PickleBarn</h2><div class="bgrid g5">${cards(ic)}</div></div>` +
+    `<div class="bgroup out"><h2>Outdoor</h2><div class="bgrid g8">${cards(oc)}</div></div>`;
+}
+setInterval(() => document.querySelectorAll('.slide.board').forEach(drawBoard), 60 * 1000);
+
 function setUpdatedLabel(){
-  const t = SHOTS.ts ? new Date(SHOTS.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
-  document.querySelectorAll('.liveTxt').forEach(n => { n.textContent = (SHOTS.ok && t) ? 'UPDATED ' + t : 'LIVE'; });
+  const ts = BOARD.ok && BOARD.ts ? BOARD.ts : SHOTS.ts;
+  const t = ts ? new Date(ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+  document.querySelectorAll('.liveTxt').forEach(n => { n.textContent = ((SHOTS.ok || BOARD.ok) && t) ? 'UPDATED ' + t : 'LIVE'; });
 }
 function phoneUrl(link){
   const m = String(link).match(/EmbedCode\/\d+\/(\d+)/);
@@ -507,6 +587,13 @@ function render(s){
   const picHtml = photo ? `<div class="pic"><img src="${esc(imgUrl(photo))}" alt=""></div>` : '';
   if(photo) el.classList.add('hasPic');
 
+  if(type === 'board'){
+    el.classList.add('courts','board');
+    el.innerHTML = `<div class="courtsHead"><h1>${esc(s.title || "Who's on the Courts")}</h1>
+      <div class="live"><i></i><span class="liveTxt">LIVE</span></div><div class="now"></div></div><div class="boardWrap"></div>`;
+    drawBoard(el); setUpdatedLabel();
+    return el;
+  }
   if(type === 'courts' || type === 'courtreserve'){
     el.classList.add('courts');
     el.innerHTML = `<div class="courtsHead"><h1>${esc(s.title || "Who's on the Courts")}</h1>

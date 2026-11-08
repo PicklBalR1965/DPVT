@@ -20,10 +20,32 @@ function relabel() {
   });
 }
 
+// Runs inside the page: read every event on the scheduler grid, keyed by court column
+function extract() {
+  const clean = t => String(t || '').replace(/-=\s*Private Event[^=]*=-/gi, 'Private Event').replace(/Private Event\s+[A-Z0-9]{4,8}\b/g, 'Private Event').replace(/\s+/g, ' ').trim();
+  const hd = [...document.querySelectorAll('#CourtsScheduler .k-scheduler-header th')].map(t => {
+    const r = t.getBoundingClientRect(); return { n: t.textContent.trim(), l: r.left, r: r.right };
+  }).filter(h => /^[A-Z]{2}\d{1,2}$/.test(h.n));
+  const out = { courts: hd.map(h => h.n), ev: {} };
+  hd.forEach(h => { out.ev[h.n] = []; });
+  document.querySelectorAll('#CourtsScheduler .k-event').forEach(e => {
+    const r = e.getBoundingClientRect(), mid = (r.left + r.right) / 2;
+    const h = hd.find(x => mid >= x.l && mid <= x.r); if (!h) return;
+    const tm = (e.querySelector('.event-time') || {}).textContent || '';
+    const m = tm.match(/(\d{1,2}:\d{2})\s*([AP]M)\s*-\s*(\d{1,2}:\d{2})\s*([AP]M)/i); if (!m) return;
+    const mins = (hm, ap) => { const p = hm.split(':').map(Number); let hh = p[0] % 12; if (/p/i.test(ap)) hh += 12; return hh * 60 + p[1]; };
+    const lines = e.innerText.split('\n').map(clean).filter(Boolean);
+    const cat = lines[0] || '';
+    const title = (lines[1] && !/\d:\d\d\s*[AP]M/i.test(lines[1])) ? lines[1] : cat;
+    out.ev[h.n].push({ s: mins(m[1], m[2]), e: mins(m[3], m[4]), cat: cat, title: title });
+  });
+  return out;
+}
+
 (async () => {
   fs.mkdirSync('out', { recursive: true });
   // start from the last published files so a failed capture never wipes a good picture
-  try { fs.readdirSync('prev').filter(f => /^(courts-.*\.jpg|meta\.json)$/.test(f)).forEach(f => fs.copyFileSync('prev/' + f, 'out/' + f)); } catch (e) {}
+  try { fs.readdirSync('prev').filter(f => /^(courts-.*\.jpg|meta\.json|courts\.json)$/.test(f)).forEach(f => fs.copyFileSync('prev/' + f, 'out/' + f)); } catch (e) {}
   const log = [];
   const note = m => { console.log(m); log.push(m); };
   let prev = {};
@@ -36,6 +58,8 @@ function relabel() {
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
   });
   let ok = 0;
+  let board = { widgets: {} };
+  try { board = JSON.parse(fs.readFileSync('prev/courts.json', 'utf8')); } catch (e) {}
   for (const id of IDS) {
     const page = await ctx.newPage();
     try {
@@ -49,6 +73,10 @@ function relabel() {
       await page.waitForTimeout(500);
       await page.screenshot({ path: `out/courts-${id}.jpg`, type: 'jpeg', quality: 80 });
       shots[id] = Date.now();
+      try {
+        const d = await page.evaluate(extract);
+        if (d.courts.length) { d.ts = shots[id]; board.widgets[id] = d; note(id + ': ' + d.courts.length + ' courts, ' + Object.values(d.ev).reduce((a, b) => a + b.length, 0) + ' events'); }
+      } catch (e3) { note('extract failed ' + id + ': ' + e3.message.split('\n')[0]); }
       ok++;
       note('captured ' + id);
     } catch (e) {
@@ -62,6 +90,7 @@ function relabel() {
     await page.close();
   }
   await browser.close();
+  fs.writeFileSync('out/courts.json', JSON.stringify(board));
   fs.writeFileSync('out/log.txt', log.join('\n') + '\n');
   if (!ok) process.exit(1);                         // nothing new: the old pictures stay published
 
