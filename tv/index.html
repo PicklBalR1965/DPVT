@@ -158,15 +158,15 @@
   .bgroup{display:flex;flex-direction:column;gap:.4vw;min-height:0}
   .bgroup.out{flex:2}
   .bgroup.ind{flex:1}
-  .bgroup h2{font-size:1.15vw;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-lt);font-weight:700}
+  .bgroup h2{font-size:1.6vw;letter-spacing:.22em;text-transform:uppercase;color:var(--teal-lt);font-weight:700}
   .bgrid{flex:1;display:grid;gap:.6vw;min-height:0}
   .bgrid.g5{grid-template-columns:repeat(5,1fr);grid-template-rows:1fr}
   .bgrid.g8{grid-template-columns:repeat(8,1fr);grid-template-rows:1fr 1fr}
-  .bc{background:var(--card);border:1px solid var(--line);border-left:.45vw solid var(--dim);border-radius:.6vw;padding:.55vw .7vw;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden}
-  .bc .cn{font-size:1.5vw;font-weight:700;line-height:1}
-  .bc .st{font-size:1.05vw;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-top:.25vw}
-  .bc .tt{font-size:1.25vw;line-height:1.12;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-  .bc .un{font-size:1.1vw;color:var(--muted);line-height:1.15}
+  .bc{background:var(--card);border:1px solid var(--line);border-left:.6vw solid var(--dim);border-radius:.7vw;padding:.7vw .8vw;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden}
+  .bc .cn{font-size:2.5vw;font-weight:700;line-height:1;white-space:nowrap}
+  .bc .st{font-size:1.5vw;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.35vw}
+  .bc .tt{font-size:1.75vw;line-height:1.12;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .bc .un{font-size:1.6vw;font-weight:700;color:var(--ink);line-height:1.1}
   .bc.play{border-left-color:var(--teal)} .bc.play .st{color:var(--teal-lt)}
   .bc.league{border-left-color:#9b6bff} .bc.league .st{color:#b99bff}
   .bc.priv{border-left-color:var(--blue)} .bc.priv .st{color:#7fa6ff}
@@ -451,10 +451,10 @@ function loadBoard(){
 setInterval(() => { loadBoard().then(() => { document.querySelectorAll('.slide.board').forEach(drawBoard); setUpdatedLabel(); }); }, 5 * 60 * 1000);
 
 function minsNow(){ const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
-function fmtMin(m){ const h = Math.floor(m / 60) % 24, mm = m % 60; return ((h % 12) || 12) + ':' + (mm < 10 ? '0' : '') + mm + ' ' + (h >= 12 ? 'PM' : 'AM'); }
+function fmtMin(m){ const h = Math.floor(m / 60) % 24, mm = m % 60; return ((h % 12) || 12) + (mm ? ':' + (mm < 10 ? '0' : '') + mm : '') + (h >= 12 ? ' PM' : ' AM'); }
 function courtName(code){
   const m = String(code).match(/^([A-Z]{2})0*(\d+)$/); if(!m) return code;
-  return (m[1] === 'IC' ? 'Indoor ' : 'Outdoor ') + m[2];
+  return 'Court ' + m[2];
 }
 function shortCat(e){
   let t = String(e.cat || e.title || '');
@@ -477,8 +477,8 @@ function courtCard(code, evs, now){
     if(cls === 'closed'){ st = 'Closed'; un = 'Until ' + fmtMin(cur.e); }
     else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); un = 'Until ' + fmtMin(cur.e); }
   } else {
-    tt = 'Open court';
-    if(nxt) un = evKind(nxt) === 'closed' ? 'Open until ' + fmtMin(nxt.s) : 'Next: ' + fmtMin(nxt.s);
+    tt = '';
+    if(nxt) un = evKind(nxt) === 'closed' ? 'Until ' + fmtMin(nxt.s) : 'Next ' + fmtMin(nxt.s);
   }
   return `<div class="bc ${cls}"><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
 }
@@ -489,8 +489,8 @@ function drawBoard(el){
   const codes = Object.keys(all), ic = codes.filter(c => /^IC/.test(c)).sort(), oc = codes.filter(c => /^OC/.test(c)).sort();
   const cards = list => list.map(c => courtCard(c, all[c], now)).join('');
   el.querySelector('.boardWrap').innerHTML =
-    `<div class="bgroup ind"><h2>Indoor · PickleBarn</h2><div class="bgrid g5">${cards(ic)}</div></div>` +
-    `<div class="bgroup out"><h2>Outdoor</h2><div class="bgrid g8">${cards(oc)}</div></div>`;
+    `<div class="bgroup ind"><h2>Indoor · PickleBarn (Courts 1–5)</h2><div class="bgrid g5">${cards(ic)}</div></div>` +
+    `<div class="bgroup out"><h2>Outdoor (Courts 1–16)</h2><div class="bgrid g8">${cards(oc)}</div></div>`;
 }
 setInterval(() => document.querySelectorAll('.slide.board').forEach(drawBoard), 60 * 1000);
 
