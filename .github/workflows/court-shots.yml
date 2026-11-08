@@ -1,0 +1,46 @@
+name: court-shots
+
+on:
+  schedule:
+    - cron: '*/30 9-23,0-3 * * *'    # every 30 min, roughly 5am-midnight Eastern
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: court-shots
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+
+      - name: Get previous pictures (kept if a capture fails)
+        run: git clone --depth 1 --branch shots "https://github.com/${{ github.repository }}.git" prev || mkdir -p prev
+
+      - name: Take screenshots
+        run: node tools/court-shots.js
+
+      - name: Publish to the shots branch
+        run: |
+          cd out
+          git init -q -b shots
+          git config user.name "court-shots bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "court screenshots $(date -u +%FT%TZ)"
+          git remote add origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          git push -f origin shots

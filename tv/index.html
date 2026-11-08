@@ -89,6 +89,7 @@
     box-shadow:0 1.5vw 3vw rgba(0,0,0,.5)}
   .qr .code{background:#e9f1f3;padding:1.1vw;border-radius:1vw}
   .qr .code svg{width:100%;height:auto;display:block}
+  .qr .code img,.takeQr .code img{width:100%;height:auto;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
   .qr span svg.lucide{width:1.6vw;height:1.6vw}
   .qr span{display:flex;align-items:center;justify-content:center;gap:.6vw;color:#fff;font-weight:700;
     font-size:1.3vw;margin-top:1.1vw;letter-spacing:.08em;text-transform:uppercase}
@@ -143,8 +144,10 @@
   .courtsBody iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
   /* CourtReserve lobby view: rendered at a fixed desktop size, scaled to fit, and panned to "now" */
   .cr{position:absolute;left:0;right:0;overflow:hidden}
-  .cr iframe{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;inset:auto}
-  .cr.body iframe{transition:transform 1.5s ease}
+  .cr iframe,.cr img{position:absolute;left:0;top:0;border:0;transform-origin:0 0;pointer-events:none;inset:auto;max-width:none}
+  .nowLine{position:absolute;left:0;right:0;height:0;border-top:.18vw solid #e5484d;z-index:3;pointer-events:none;display:none}
+  .nowLine::before{content:"";position:absolute;left:0;top:-.5vw;border:.45vw solid transparent;border-left:.7vw solid #e5484d}
+  .cr.body iframe,.cr.body img{transition:transform 1.5s ease}
   .courtsBody .embed{position:absolute;inset:0;overflow:hidden}
 
   .courtsRow{flex:1;display:flex;gap:.8vw;min-height:0}
@@ -256,7 +259,8 @@ function loadSheet(){
   const cb = '__sheet' + Date.now();
   const s = document.createElement('script');
   const t = setTimeout(()=>fail(), 15000);
-  window[cb] = (resp)=>{ clearTimeout(t); cleanup(); try{ apply(parse(resp), true); }catch(e){ fail(); } };
+  const metaReady = loadShotsMeta();
+  window[cb] = (resp)=>{ clearTimeout(t); cleanup(); metaReady.then(() => { try{ apply(parse(resp), true); }catch(e){ fail(); } }); };
   function cleanup(){ delete window[cb]; s.remove(); }
   function fail(){ clearTimeout(t); cleanup(); useCache(true); }
   s.onerror = fail;
@@ -352,6 +356,20 @@ function qrSvg(text){
   return q.createSvgTag({cellSize:8, margin:0, scalable:true});
 }
 
+/* QR as a real PNG image (drawn on a canvas): scales cleanly and works in old TV browsers where inline SVG can misbehave */
+function qrImg(text){
+  if(typeof qrcode === 'undefined') return '';
+  try{
+    const q = qrcode(0, 'M'); q.addData(text); q.make();
+    const n = q.getModuleCount(), cell = 12, quiet = 3, size = (n + quiet * 2) * cell;
+    const c = document.createElement('canvas'); c.width = size; c.height = size;
+    const x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.fillRect(0, 0, size, size); x.fillStyle = '#000000';
+    for(let r = 0; r < n; r++) for(let k = 0; k < n; k++) if(q.isDark(r, k)) x.fillRect((k + quiet) * cell, (r + quiet) * cell, cell, cell);
+    return '<img class="qrimg" alt="QR code" src="' + c.toDataURL('image/png') + '">';
+  }catch(e){ return qrSvg(text); }
+}
+
 function detailsHtml(d){
   if(!d) return '';
   const parts = String(d).split('|').map(x => x.trim()).filter(Boolean);
@@ -378,13 +396,55 @@ function mountEmbed(box, val){
   }
 }
 
+/* Court screenshots: a GitHub Action photographs the CourtReserve widgets every 30 minutes and
+   publishes them to the 'shots' branch. Showing a picture is instant; the live widget is the fallback. */
+const SHOTS_BASE = 'https://raw.githubusercontent.com/PicklBalR1965/DPVT/shots/';
+const SHOTS = { ok:false, ts:0 };
+const PHONE_KEYS = { '21564':'indoor', '106548':'outdoor1', '106549':'outdoor2' };
+function loadShotsMeta(){
+  return new Promise(resolve => {
+    try{
+      fetch(SHOTS_BASE + 'meta.json?t=' + Date.now(), {cache:'no-store'}).then(r => r.json()).then(m => {
+        const ts = Number(m.ts) || 0;
+        SHOTS.ts = ts; SHOTS.ok = !!ts && (Date.now() - ts) < 3 * 3600 * 1000;
+        setUpdatedLabel(); resolve();
+      }).catch(() => { SHOTS.ok = false; resolve(); });
+    }catch(e){ SHOTS.ok = false; resolve(); }
+  });
+}
+function setUpdatedLabel(){
+  const t = SHOTS.ts ? new Date(SHOTS.ts).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+  document.querySelectorAll('.liveTxt').forEach(n => { n.textContent = (SHOTS.ok && t) ? 'UPDATED ' + t : 'LIVE'; });
+}
+function phoneUrl(link){
+  const m = String(link).match(/EmbedCode\/\d+\/(\d+)/);
+  let u = 'courts.html'; try{ u = new URL('courts.html', location.href).href; }catch(e){}
+  return u + '#' + ((m && PHONE_KEYS[m[1]]) || 'indoor');
+}
+
 /* CourtReserve's widget jumps back to 7 AM when it refreshes, so we don't rely on its own scrolling.
    We render it tall enough to hold the whole day, pin its header (date + court names) on top,
    and pan the schedule underneath so the current time is always in view. */
 const CR = { w:1600, h:1520, header:129, startMin:7*60, rowMin:30, rowPx:47.25, dayPx:1323, leadMin:30 };
 function mountCourtReserve(box, url){
+  const m = String(url).match(/EmbedCode\/\d+\/(\d+)/);
+  if(SHOTS.ok && m){ mountShot(box, m[1], url); return; }
+  mountLive(box, url);
+}
+function mountLive(box, url){
   box.innerHTML = '<div class="cr head"><iframe scrolling="no"></iframe></div><div class="cr body"><iframe scrolling="no"></iframe></div>';
   box.querySelectorAll('iframe').forEach(f => { f.dataset.src = url; f.src = url; f.style.width = CR.w + 'px'; f.style.height = CR.h + 'px'; });
+  box._crLayout = () => layoutCourtReserve(box);
+  layoutCourtReserve(box);
+}
+function mountShot(box, id, url){
+  box.innerHTML = '<div class="cr head"><img alt=""></div><div class="cr body"><img alt=""><div class="nowLine"></div></div>';
+  box.querySelectorAll('img').forEach((im, i) => {
+    im.dataset.base = SHOTS_BASE + 'courts-' + id + '.jpg';
+    im.src = im.dataset.base + '?t=' + SHOTS.ts;
+    im.style.width = CR.w + 'px'; im.style.height = CR.h + 'px';
+    im.onerror = () => { SHOTS.ok = false; setUpdatedLabel(); mountLive(box, url); };
+  });
   box._crLayout = () => layoutCourtReserve(box);
   layoutCourtReserve(box);
 }
@@ -398,8 +458,14 @@ function layoutCourtReserve(box){
   const now = new Date(), mins = now.getHours() * 60 + now.getMinutes() - CR.startMin - CR.leadMin;
   let off = Math.max(0, mins) / CR.rowMin * CR.rowPx;
   off = Math.min(off, Math.max(0, CR.dayPx - visible));
-  head.querySelector('iframe').style.transform = `scale(${k})`;
-  body.querySelector('iframe').style.transform = `scale(${k}) translateY(${-(CR.header + off)}px)`;
+  head.querySelector('iframe,img').style.transform = `scale(${k})`;
+  body.querySelector('iframe,img').style.transform = `scale(${k}) translateY(${-(CR.header + off)}px)`;
+  const nl = body.querySelector('.nowLine');                          // picture mode: draw our own "now" line
+  if(nl){
+    const y = ((now.getHours() * 60 + now.getMinutes() - CR.startMin) / CR.rowMin * CR.rowPx - 6 - off) * k;
+    const bh = H - headH;
+    nl.style.display = (y >= 0 && y <= bh) ? 'block' : 'none'; nl.style.top = y + 'px';
+  }
 }
 setInterval(() => document.querySelectorAll('.courtsBody').forEach(b => b._crLayout && b._crLayout()), 60 * 1000);
 window.addEventListener('resize', () => { document.querySelectorAll('.courtsBody').forEach(b => b._crLayout && b._crLayout()); document.querySelectorAll('.slide').forEach(fitSlide); });
@@ -437,8 +503,8 @@ function render(s){
   if(type === 'courts' || type === 'courtreserve'){
     el.classList.add('courts');
     el.innerHTML = `<div class="courtsHead"><h1>${esc(s.title || "Who's on the Courts")}</h1>
-      <div class="live"><i></i>LIVE</div><div class="now"></div></div><div class="courtsRow"><div class="courtsBody"></div>
-      ${/^https?:/i.test(link) ? `<div class="takeQr"><div class="code">${qrSvg(link)}</div><b>Take it with you</b><span>Scan to see who's on court on your phone</span></div>` : ''}</div>`;
+      <div class="live"><i></i><span class="liveTxt">LIVE</span></div><div class="now"></div></div><div class="courtsRow"><div class="courtsBody"></div>
+      ${/^https?:/i.test(link) ? `<div class="takeQr"><div class="code">${qrImg(phoneUrl(link))}</div><b>Take it with you</b><span>Scan to see this schedule on your phone</span></div>` : ''}</div>`;
     mountEmbed(el.querySelector('.courtsBody'), link);
     return el;
   }
@@ -462,7 +528,7 @@ function render(s){
   const icon = String(s.icon || '').trim() || TYPE_ICONS[type] || 'sparkles';
   let visual;
   if(type === 'qr' && link){
-    visual = `<div class="qr"><div class="code">${qrSvg(link)}</div><span><i data-lucide="scan-line"></i>${esc(s.scanText || 'Scan with your camera')}</span></div>`;
+    visual = `<div class="qr"><div class="code">${qrImg(link)}</div><span><i data-lucide="scan-line"></i>${esc(s.scanText || 'Scan with your camera')}</span></div>`;
   } else if(photo){
     visual = '';
   } else {
@@ -511,6 +577,7 @@ function next(){
       const base = f.dataset.src || f.src; f.dataset.src = base;
       f.src = base + (base.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
     });
+    upcoming.querySelectorAll('.courtsBody img').forEach(im => { if(im.dataset.base) im.src = im.dataset.base + '?t=' + SHOTS.ts; });
     const cb = upcoming.querySelector('.courtsBody'); if(cb && cb._crLayout) cb._crLayout();
   }
   const cbNow = els[idx].querySelector('.courtsBody'); if(cbNow && cbNow._crLayout) cbNow._crLayout();

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who's on the Courts · Doylestown Pickleball</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#071219;color:#e8f1f4;font-family:"PT Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100vh}
+  header{padding:14px 16px 6px}
+  h1{font-size:22px;line-height:1.15}
+  .sub{color:#7fa3ad;font-size:13px;margin-top:3px}
+  .tabs{display:flex;gap:8px;padding:10px 16px;overflow-x:auto}
+  .tabs button{flex:none;border:1px solid #2a5a72;background:#0f2530;color:#cfe3e8;border-radius:999px;padding:9px 16px;font:inherit;font-size:15px}
+  .tabs button.on{background:#2198A1;border-color:#2198A1;color:#04161b;font-weight:700}
+  .wrap{margin:6px 10px 12px;border:1px solid #1d3b4a;border-radius:12px;overflow:auto;height:68vh;background:#fff;-webkit-overflow-scrolling:touch}
+  .wrap img{display:block;width:900px;max-width:none;height:auto}
+  .err{padding:24px 16px;color:#cfe3e8;display:none}
+  .err a,.foot a{color:#4fbfc7}
+  .foot{padding:4px 16px 24px;font-size:13px;color:#7fa3ad;line-height:1.5}
+</style></head>
+<body>
+<header><h1>Who's on the Courts</h1><div class="sub" id="upd">Doylestown Pickleball</div></header>
+<div class="tabs" id="tabs">
+  <button data-k="indoor">Indoor 1–5</button>
+  <button data-k="outdoor1">Outdoor 1–12</button>
+  <button data-k="outdoor2">Outdoor 13–16</button>
+</div>
+<div class="wrap" id="wrap"><img id="shot" alt="Court schedule"></div>
+<div class="err" id="err">The picture isn't available right now. <a id="live" href="#">Open the live schedule</a>.</div>
+<div class="foot">Swipe to scroll, pinch to zoom. The picture refreshes about every 30 minutes.<br>
+<a href="https://www.doylestownpickleball.com">doylestownpickleball.com</a></div>
+<script>
+var BASE='https://raw.githubusercontent.com/PicklBalR1965/DPVT/shots/';
+var IDS={indoor:'21564',outdoor1:'106548',outdoor2:'106549'};
+var ts=0;
+function key(){var h=(location.hash||'').replace('#','');return IDS[h]?h:'indoor';}
+function show(){
+  var k=key(),id=IDS[k],img=document.getElementById('shot');
+  [].forEach.call(document.querySelectorAll('.tabs button'),function(b){b.className=(b.getAttribute('data-k')===k)?'on':'';});
+  document.getElementById('err').style.display='none';document.getElementById('wrap').style.display='block';
+  img.onload=function(){
+    // scroll down to about an hour before "now" (schedule starts at 7:00 AM)
+    var n=new Date(),mins=n.getHours()*60+n.getMinutes()-7*60-60,k2=img.clientWidth/1600;
+    document.getElementById('wrap').scrollTop=Math.max(0,(129+Math.max(0,mins)/30*47.25)*k2-129*k2*0.2);
+  };
+  img.onerror=function(){
+    document.getElementById('wrap').style.display='none';document.getElementById('err').style.display='block';
+    document.getElementById('live').href='https://widgets.courtreserve.com/Online/Public/EmbedCode/6688/'+id;
+  };
+  img.src=BASE+'courts-'+id+'.jpg?t='+(ts||Date.now());
+}
+document.getElementById('tabs').onclick=function(e){var k=e.target.getAttribute&&e.target.getAttribute('data-k');if(k){location.hash=k;}};
+window.onhashchange=show;
+fetch(BASE+'meta.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(m){
+  ts=Number(m.ts)||0;
+  if(ts){document.getElementById('upd').textContent='Updated '+new Date(ts).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});}
+  show();
+}).catch(show);
+</script>
+</body></html>
