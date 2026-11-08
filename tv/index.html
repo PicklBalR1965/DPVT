@@ -162,16 +162,27 @@
   .bgrid{flex:1;display:grid;gap:.6vw;min-height:0}
   .bgrid.g5{grid-template-columns:repeat(5,1fr);grid-template-rows:1fr}
   .bgrid.g8{grid-template-columns:repeat(8,1fr);grid-template-rows:1fr 1fr}
-  .bc{background:var(--card);border:1px solid var(--line);border-left:.6vw solid var(--dim);border-radius:.7vw;padding:.7vw .8vw;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden}
-  .bc .cn{font-size:2.5vw;font-weight:700;line-height:1;white-space:nowrap}
-  .bc .st{font-size:1.5vw;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.35vw}
-  .bc .tt{font-size:1.75vw;line-height:1.12;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-  .bc .un{font-size:1.6vw;font-weight:700;color:var(--ink);line-height:1.1}
-  .bc.play{border-left-color:var(--teal)} .bc.play .st{color:var(--teal-lt)}
-  .bc.league{border-left-color:#9b6bff} .bc.league .st{color:#b99bff}
-  .bc.priv{border-left-color:var(--blue)} .bc.priv .st{color:#7fa6ff}
-  .bc.open{border-left-color:#3fb67a} .bc.open .st{color:#6fd6a0}
-  .bc.closed{opacity:.55} .bc.closed .st{color:var(--dim)}
+  /* each card is a little top-down pickleball court: kitchen lines, centre lines and the net */
+  .bc{position:relative;background:#050d13;border:1px solid #0e2230;border-radius:.6vw;padding:1vw 1.2vw;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden;--surf:#1f6d8c;--kit:#195a75}
+  .bc .crt{position:absolute;inset:.4vw;border:.16vw solid rgba(255,255,255,.75);border-radius:.15vw;z-index:0;
+    background:
+      repeating-linear-gradient(90deg,rgba(255,255,255,.85) 0 .22vw,transparent .22vw .44vw) 0 50%/100% .26vw no-repeat,
+      linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.6)) 0 34%/100% .13vw no-repeat,
+      linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.6)) 0 66%/100% .13vw no-repeat,
+      linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.6)) 50% 0/.13vw 34% no-repeat,
+      linear-gradient(rgba(255,255,255,.6),rgba(255,255,255,.6)) 50% 100%/.13vw 34% no-repeat,
+      linear-gradient(to bottom,transparent 34%,var(--kit) 34%,var(--kit) 66%,transparent 66%),
+      var(--surf)}
+  .bc > div:not(.crt){position:relative;z-index:1;text-shadow:0 .08vw .35vw rgba(0,0,0,.95),0 0 .15vw rgba(0,0,0,.8)}
+  .bc .cn{font-size:2.5vw;font-weight:700;line-height:1;white-space:nowrap;color:#fff}
+  .bc .st{font-size:1.5vw;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:.35vw;color:#fff}
+  .bc .tt{font-size:1.75vw;line-height:1.12;color:#fff;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .bc .un{font-size:1.6vw;font-weight:700;color:#fff;line-height:1.1}
+  .bc.open{--surf:#23805f;--kit:#1b6a4f}
+  .bc.play{--surf:#13808b;--kit:#0e6973}
+  .bc.league{--surf:#5f43ad;--kit:#4c3590}
+  .bc.priv{--surf:#2f58c7;--kit:#2749a6}
+  .bc.closed{--surf:#2b3a44;--kit:#24323b;opacity:.65}
   .courtsRow{flex:1;display:flex;gap:.8vw;min-height:0}
   .takeQr{width:11vw;flex:none;align-self:flex-end;text-align:center;background:var(--card);border:1px solid var(--line);
     border-radius:.8vw;padding:.8vw;line-height:1.2}
@@ -480,7 +491,7 @@ function courtCard(code, evs, now){
     tt = '';
     if(nxt) un = evKind(nxt) === 'closed' ? 'Until ' + fmtMin(nxt.s) : 'Next ' + fmtMin(nxt.s);
   }
-  return `<div class="bc ${cls}"><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
+  return `<div class="bc ${cls}"><div class="crt"></div><div><div class="cn">${esc(courtName(code))}</div><div class="st">${st}</div></div><div class="tt">${esc(tt)}</div><div class="un">${esc(un)}</div></div>`;
 }
 function drawBoard(el){
   if(!el || !BOARD.widgets) return;
