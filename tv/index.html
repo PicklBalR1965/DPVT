@@ -193,7 +193,9 @@
   .bc.play{--surf:#13808b;--kit:#0e6973}
   .bc.league{--surf:#5f43ad;--kit:#4c3590}
   .bc.priv{--surf:#2f58c7;--kit:#2749a6}
-  .bc.closed{--surf:#2b3a44;--kit:#24323b;opacity:.65}
+  .bc.closed{--surf:#2a0a0e;--kit:#340d12}
+  .bc.lesson{--surf:#d9822b;--kit:#b96d20}
+  .bc.priv{--surf:#3a6bff;--kit:#2f58d8}
   .courtsRow{flex:1;display:flex;gap:.8vw;min-height:0}
   .takeQr{width:11vw;flex:none;align-self:flex-end;text-align:center;background:var(--card);border:1px solid var(--line);
     border-radius:.8vw;padding:.8vw;line-height:1.2}
@@ -487,6 +489,7 @@ function evKind(e){
   const t = (e.cat + ' ' + e.title).toLowerCase();
   if(/unavailable/.test(t)) return 'closed';
   if(/private|rental/.test(t)) return 'priv';
+  if(/lesson|clinic|coach|camp|class/.test(t)) return 'lesson';
   if(/league/.test(t)) return 'league';
   return 'play';
 }
@@ -497,7 +500,7 @@ function courtCard(code, evs, now, area, grp){
   if(cur){
     cls = evKind(cur);
     if(cls === 'closed'){ st = 'Closed'; un = 'Until ' + fmtMin(cur.e); }
-    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); un = 'Until ' + fmtMin(cur.e); }
+    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : cls === 'lesson' ? 'Lesson' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); un = 'Until ' + fmtMin(cur.e); }
   } else {
     tt = '';
     if(nxt) un = evKind(nxt) === 'closed' ? 'Until ' + fmtMin(nxt.s) : 'Next ' + fmtMin(nxt.s);
@@ -518,7 +521,7 @@ function drawBoard(el){
   o1.forEach((c, k) => out.push(courtCard(c, all[c], now, `${4 + Math.floor(k / 6)}/${(k % 6) + 1}`, 'g1')));
   out.push(`<h2 class="g2 sep" style="grid-area:6/1/7/7">Outdoor · 13–16</h2>`);
   o2.forEach((c, k) => out.push(courtCard(c, all[c], now, `7/${k + 1}`, 'g2')));
-  out.push(`<div class="legend" style="grid-area:7/5/8/7"><b>Key</b><span><i style="background:#0b2a1e"></i>Open</span><span><i style="background:#13808b"></i>Group play</span><span><i style="background:#5f43ad"></i>League</span><span><i style="background:#2f58c7"></i>Reserved</span><span><i style="background:#2b3a44"></i>Closed</span></div>`);
+  out.push(`<div class="legend" style="grid-area:7/5/8/7"><b>Key</b><span><i style="background:#0b2a1e"></i>Open</span><span><i style="background:#13808b"></i>Group play</span><span><i style="background:#5f43ad"></i>League</span><span><i style="background:#3a6bff"></i>Reserved</span><span><i style="background:#d9822b"></i>Lesson</span><span><i style="background:#2a0a0e"></i>Closed</span></div>`);
   el.querySelector('.boardWrap').innerHTML = out.join('');
 }
 setInterval(() => document.querySelectorAll('.slide.board').forEach(drawBoard), 60 * 1000);

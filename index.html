@@ -44,7 +44,9 @@
   .bc.play{--surf:#13808b;--kit:#0e6973}
   .bc.league{--surf:#5f43ad;--kit:#4c3590}
   .bc.priv{--surf:#2f58c7;--kit:#2749a6}
-  .bc.closed{--surf:#2b3a44;--kit:#24323b;opacity:.65}
+  .bc.closed{--surf:#2a0a0e;--kit:#340d12}
+  .bc.lesson{--surf:#d9822b;--kit:#b96d20}
+  .bc.priv{--surf:#3a6bff;--kit:#2f58d8}
   .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:22px 2px 0;font-size:13px;color:var(--muted)}
   .legend span{display:flex;align-items:center;gap:7px}
   .legend i{width:18px;height:12px;border-radius:2px;border:1.5px solid rgba(255,255,255,.6)}
@@ -65,7 +67,7 @@
   <div id="board"><div class="msg">Loading courts…</div></div>
   <div class="legend">
     <span><i style="background:#0b2a1e"></i>Open</span><span><i style="background:#13808b"></i>Group play</span>
-    <span><i style="background:#5f43ad"></i>League</span><span><i style="background:#2f58c7"></i>Reserved</span><span><i style="background:#2b3a44"></i>Closed</span>
+    <span><i style="background:#5f43ad"></i>League</span><span><i style="background:#3a6bff"></i>Reserved</span><span><i style="background:#d9822b"></i>Lesson</span><span><i style="background:#2a0a0e"></i>Closed</span>
   </div>
 </main>
 <footer>
@@ -92,6 +94,7 @@ function kind(e){
   var t = (e.cat+' '+e.title).toLowerCase();
   if(/unavailable/.test(t)) return 'closed';
   if(/private|rental/.test(t)) return 'priv';
+  if(/lesson|clinic|coach|camp|class/.test(t)) return 'lesson';
   if(/league/.test(t)) return 'league';
   return 'play';
 }
@@ -103,7 +106,7 @@ function card(code, evs, now, grp){
   if(cur){
     cls = kind(cur); un = 'Until ' + fmt(cur.e);
     if(cls === 'closed') st = 'Closed';
-    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); }
+    else { st = cls === 'priv' ? 'Reserved' : cls === 'league' ? 'League' : cls === 'lesson' ? 'Lesson' : 'Group play'; tt = cls === 'priv' ? 'Private Event' : shortCat(cur); }
   } else if(nxt){
     un = kind(nxt) === 'closed' ? 'Until ' + fmt(nxt.s) : 'Next ' + fmt(nxt.s);
   }
