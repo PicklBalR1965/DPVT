@@ -189,7 +189,7 @@
   .bc .un{margin-top:auto;font-size:1.3vw;font-weight:700;color:#fff;line-height:1.1}
   .gi{--bd:#f5b83d} .g1{--bd:#ff7a5c} .g2{--bd:#ff6fb5}
   .boardWrap h2.gi,.boardWrap h2.g1,.boardWrap h2.g2{color:var(--bd)}
-  .bc.open{--surf:#03070a;--kit:#08151d}
+  .bc.open{--surf:#0b2a1e;--kit:#0e3626}
   .bc.play{--surf:#13808b;--kit:#0e6973}
   .bc.league{--surf:#5f43ad;--kit:#4c3590}
   .bc.priv{--surf:#2f58c7;--kit:#2749a6}
@@ -518,7 +518,7 @@ function drawBoard(el){
   o1.forEach((c, k) => out.push(courtCard(c, all[c], now, `${4 + Math.floor(k / 6)}/${(k % 6) + 1}`, 'g1')));
   out.push(`<h2 class="g2 sep" style="grid-area:6/1/7/7">Outdoor · 13–16</h2>`);
   o2.forEach((c, k) => out.push(courtCard(c, all[c], now, `7/${k + 1}`, 'g2')));
-  out.push(`<div class="legend" style="grid-area:7/5/8/7"><b>Key</b><span><i style="background:#03070a"></i>Open</span><span><i style="background:#13808b"></i>Group play</span><span><i style="background:#5f43ad"></i>League</span><span><i style="background:#2f58c7"></i>Reserved</span><span><i style="background:#2b3a44"></i>Closed</span></div>`);
+  out.push(`<div class="legend" style="grid-area:7/5/8/7"><b>Key</b><span><i style="background:#0b2a1e"></i>Open</span><span><i style="background:#13808b"></i>Group play</span><span><i style="background:#5f43ad"></i>League</span><span><i style="background:#2f58c7"></i>Reserved</span><span><i style="background:#2b3a44"></i>Closed</span></div>`);
   el.querySelector('.boardWrap').innerHTML = out.join('');
 }
 setInterval(() => document.querySelectorAll('.slide.board').forEach(drawBoard), 60 * 1000);
