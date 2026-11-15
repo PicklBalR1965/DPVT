@@ -18,7 +18,8 @@
   header .hbtn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap}
   header .hbtn:hover{border-color:var(--teal);color:var(--teal-lt)}
   header .hbtn + .clock{margin-left:14px}
-  @media(max-width:520px){header .hbtn span{display:none} header .hbtn{padding:8px 11px} header{gap:10px;padding:12px 12px} header img{width:40px;height:40px} header h1{font-size:19px;white-space:nowrap} header .sub{font-size:10px;letter-spacing:.12em;white-space:nowrap} header .clock b{font-size:19px} header .clock span{font-size:11px} header .hbtn + .clock{margin-left:10px}}
+  header .hbtn + .hbtn{margin-left:8px}
+  @media(max-width:520px){header .hbtn span{display:none} header .hbtn{padding:8px 11px} header{gap:10px;padding:12px 12px} header img{width:40px;height:40px} header h1{font-size:19px;white-space:nowrap} header .sub{font-size:10px;letter-spacing:.12em;white-space:nowrap} header .clock b{font-size:19px} header .clock span{font-size:11px} header .hbtn + .clock{margin-left:10px} header .hbtn + .hbtn{margin-left:6px}}
   header .clock b,header .clock span{white-space:nowrap}
   header .clock b{font-size:24px;display:block;font-variant-numeric:tabular-nums}
   header .clock span{font-size:12px;color:var(--muted)}
@@ -59,12 +60,14 @@
   footer{max-width:1100px;margin:26px auto 0;padding:0 16px;color:var(--muted);font-size:13px;line-height:1.6}
   footer a{color:var(--teal-lt)}
   @media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))} .bc{height:120px} .bc .cn{font-size:25px} .bc .un{font-size:15px} header h1{font-size:26px}}
+  @media(max-width:430px){header .clock{display:none}}
 </style>
 </head>
 <body>
 <header>
   <img src="logo.png" alt="Doylestown Pickleball">
   <div><h1>Who's Playing</h1><div class="sub">Doylestown Pickleball</div></div>
+  <a class="hbtn" href="../indoor/" title="All indoor courts, whole day">🗓️<span> Indoor today</span></a>
   <a class="hbtn" href="https://order.doylestownpickleball.com/shop" title="Demo paddles & pro shop dashboard">🏓<span> Demo paddles</span></a>
   <div class="clock"><b id="clk">--:--</b><span id="dte"></span></div>
 </header>

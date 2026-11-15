@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Indoor Courts Today · Doylestown Pickleball</title>
+<meta name="theme-color" content="#03070a">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png"><link rel="icon" type="image/png" sizes="64x64" href="../icons/favicon-64.png"><link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<style>
+  :root{--navy:#1D4A62;--teal:#2198A1;--teal-lt:#4fbfc7;--ink:#eef5f7;--muted:#a3b8c2;--bg:#03070a;--card:#0a1922;--line:#163242}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"PT Sans",Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;min-height:100vh;padding:0 0 40px}
+  header{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(3,7,10,.95);z-index:5;backdrop-filter:blur(6px)}
+  header img{width:46px;height:46px;border-radius:50%}
+  header h1{font-size:22px;line-height:1.1}
+  header .sub{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--teal-lt);margin-top:3px}
+  header .clock{margin-left:auto;text-align:right}
+  header .hbtn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap}
+  header .hbtn:hover{border-color:var(--teal);color:var(--teal-lt)}
+  header .hbtn + .clock{margin-left:14px}
+  @media(max-width:520px){header .hbtn span{display:none} header .hbtn{padding:8px 11px} header{gap:10px;padding:12px 12px} header img{width:40px;height:40px} header h1{font-size:19px;white-space:nowrap} header .sub{font-size:10px;letter-spacing:.12em;white-space:nowrap} header .clock b{font-size:19px} header .clock span{font-size:11px} header .hbtn + .clock{margin-left:10px}}
+  header .clock b,header .clock span{white-space:nowrap}
+  header .clock b{font-size:24px;display:block;font-variant-numeric:tabular-nums}
+  header .clock span{font-size:12px;color:var(--muted)}
+  main{max-width:1100px;margin:0 auto;padding:14px 14px 0}
+  .upd{display:flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-lt);margin:4px 2px 12px}
+  .upd i{width:9px;height:9px;border-radius:50%;background:var(--teal);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.25}}
+  .sched{display:grid;grid-template-columns:52px repeat(5,minmax(0,1fr));column-gap:6px;position:relative}
+  .colh{position:sticky;top:79px;z-index:4;background:rgba(3,7,10,.95);padding:8px 0 8px;text-align:center;font-weight:700;font-size:15px;color:#f5b83d;border-bottom:2px solid #f5b83d}
+  .colh small{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:400}
+  .times,.lane{position:relative;height:var(--H)}
+  .times div{position:absolute;right:6px;font-size:11px;color:var(--muted);transform:translateY(-50%);white-space:nowrap}
+  .lane{background:repeating-linear-gradient(to bottom,var(--line) 0 1px,transparent 1px var(--hr)),#061019;border-radius:6px}
+  .ev{position:absolute;left:3px;right:3px;border-radius:6px;padding:4px 6px;overflow:hidden;color:#fff;font-size:12px;line-height:1.2;border:1px solid rgba(255,255,255,.25);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .ev b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ev span{display:block;opacity:.9;font-size:11px}
+  .ev.past{opacity:.45}
+  .ev.play{background:#13808b} .ev.league{background:#5f43ad} .ev.priv{background:#3a6bff} .ev.lesson{background:#d9822b} .ev.closed{background:#4a1219}
+  .now{position:absolute;left:46px;right:0;height:0;border-top:2px solid #ff5a4f;z-index:3;pointer-events:none}
+  .now:before{content:"";position:absolute;left:-6px;top:-6px;width:10px;height:10px;border-radius:50%;background:#ff5a4f}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin:18px 2px 0;font-size:13px;color:var(--muted)}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .legend i{width:18px;height:12px;border-radius:2px;border:1.5px solid rgba(255,255,255,.6)}
+  .msg{margin:30px 0;text-align:center;color:var(--muted);line-height:1.5}
+  footer{max-width:1100px;margin:26px auto 0;padding:0 16px;color:var(--muted);font-size:13px;line-height:1.6}
+  footer a{color:var(--teal-lt)}
+  @media(max-width:520px){.sched{grid-template-columns:40px repeat(5,minmax(0,1fr));column-gap:3px} .colh{top:65px;font-size:13px} .colh small{display:none} .ev{padding:3px 3px;font-size:10px;letter-spacing:-.2px} .ev b{font-size:10.5px;white-space:normal;overflow-wrap:anywhere} .ev span{font-size:10px} .times div{font-size:10px;right:4px} .now{left:34px}}
+  @media(min-width:700px){header h1{font-size:26px}}
+  @media(max-width:430px){header .clock{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <img src="../courts/logo.png" alt="Doylestown Pickleball">
+  <div><h1>Indoor Courts Today</h1><div class="sub">PickleBarn · Courts 1–5</div></div>
+  <a class="hbtn" href="../courts/" title="Who's Playing right now, all courts">📍<span> Right now</span></a>
+  <div class="clock"><b id="clk">--:--</b><span id="dte"></span></div>
+</header>
+<main>
+  <div class="upd"><i></i><span id="upd">Loading…</span></div>
+  <div id="board"><div class="msg">Loading schedule…</div></div>
+  <div class="legend">
+    <span><i style="background:#13808b"></i>Group play</span><span><i style="background:#5f43ad"></i>League</span><span><i style="background:#3a6bff"></i>Reserved</span><span><i style="background:#d9822b"></i>Lesson</span><span><i style="background:#4a1219"></i>Closed</span><span><i style="background:#061019"></i>Open</span>
+  </div>
+</main>
+<footer>
+  Schedule refreshes about every 30 minutes. To reserve a court or join group play, visit
+  <a href="https://www.doylestownpickleball.com">doylestownpickleball.com</a> or text 267-362-9619.
+</footer>
+<script>
+var BASE = 'https://raw.githubusercontent.com/PicklBalR1965/DPVT/shots/';
+var ID = '21564', PX = 60; // pixels per hour
+var DATA = null;
+function nyNow(){
+  try{
+    var p = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'numeric',hour12:false}).formatToParts(new Date());
+    var h = 0, m = 0;
+    p.forEach(function(x){ if(x.type==='hour') h = Number(x.value) % 24; if(x.type==='minute') m = Number(x.value); });
+    return h*60+m;
+  }catch(e){ var d = new Date(); return d.getHours()*60+d.getMinutes(); }
+}
+function fmt(m){ var h = Math.floor(m/60)%24, mm = m%60; return ((h%12)||12)+(mm?':'+(mm<10?'0':'')+mm:'')+(h>=12?'p':'a'); }
+function hr(m){ var h = Math.floor(m/60)%24; return ((h%12)||12)+(h>=12?' PM':' AM'); }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function kind(e){
+  var t = (e.cat+' '+e.title).toLowerCase();
+  if(/unavailable/.test(t)) return 'closed';
+  if(/private|rental/.test(t)) return 'priv';
+  if(/lesson|clinic|coach|camp|class/.test(t)) return 'lesson';
+  if(/league/.test(t)) return 'league';
+  return 'play';
+}
+function title(e, k){
+  if(k === 'priv') return 'Reserved';
+  if(k === 'closed') return 'Closed';
+  return String(e.title||e.cat||'').replace(/^(Outdoor|Indoor)\s+/i,'').replace(/^Group Play:\s*/i,'').replace(/^League:\s*/i,'League · ').trim();
+}
+function draw(){
+  var el = document.getElementById('board');
+  if(!DATA) return;
+  var w = DATA[ID];
+  if(!w || !(w.courts||[]).length){ el.innerHTML = '<div class="msg">No indoor court info right now. Please check back soon.</div>'; return; }
+  var courts = w.courts.slice().sort(), ev = w.ev || {}, now = nyNow();
+  // Day range: 7 AM–10 PM by default, stretched to fit anything earlier or later.
+  var lo = 7*60, hi = 22*60;
+  courts.forEach(function(c){ (ev[c]||[]).forEach(function(e){ lo = Math.min(lo, Math.floor(e.s/60)*60); hi = Math.max(hi, Math.ceil(e.e/60)*60); }); });
+  var H = (hi-lo)/60*PX, y = function(m){ return (m-lo)/60*PX; };
+  var html = '<div class="sched" style="--H:'+H+'px;--hr:'+PX+'px"><div class="colh"></div>';
+  courts.forEach(function(c){ var n = Number(c.replace(/\D/g,'')); html += '<div class="colh">Court '+n+'<small>Indoor</small></div>'; });
+  html += '<div class="times">';
+  for(var m = lo; m <= hi; m += 60) html += '<div style="top:'+y(m)+'px'+(m===lo?';transform:none':'')+'">'+hr(m)+'</div>';
+  html += '</div>';
+  courts.forEach(function(c){
+    html += '<div class="lane">';
+    (ev[c]||[]).slice().sort(function(a,b){ return a.s-b.s; }).forEach(function(e){
+      var k = kind(e), h = Math.max(y(e.e)-y(e.s)-2, 16);
+      html += '<div class="ev '+k+(e.e <= now ? ' past' : '')+'" style="top:'+(y(e.s)+1)+'px;height:'+h+'px" title="'+esc(title(e,k))+'"><b>'+esc(title(e,k))+'</b>'+(h > 30 ? '<span>'+fmt(e.s)+'–'+fmt(e.e)+'</span>' : '')+'</div>';
+    });
+    html += '</div>';
+  });
+  if(now >= lo && now <= hi) html += '<div class="now"></div>';
+  html += '</div>';
+  var first = !el.querySelector('.sched');
+  el.innerHTML = html;
+  // keep the now-line top position aligned with the lanes
+  var nl = el.querySelector('.now'), lane = el.querySelector('.lane'), sc = el.querySelector('.sched');
+  if(nl && lane) nl.style.top = (lane.offsetTop + y(now)) + 'px';
+  if(first && nl && now > lo + 90) window.scrollTo({top: sc.getBoundingClientRect().top + window.scrollY + lane.offsetTop + y(now) - 220});
+}
+function clock(){
+  var d = new Date();
+  document.getElementById('clk').textContent = d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+  document.getElementById('dte').textContent = d.toLocaleDateString([], {weekday:'long',month:'short',day:'numeric',timeZone:'America/New_York'});
+}
+function load(){
+  fetch(BASE + 'courts.json?t=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(b){
+    DATA = b.widgets || {};
+    var ts = (DATA[ID] && DATA[ID].ts) || 0, fresh = ts && (Date.now() - ts) < 3*3600*1000;
+    var t = new Date(ts).toLocaleTimeString([], {hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+    document.getElementById('upd').textContent = fresh ? 'Updated ' + t : 'Last updated ' + t + ' (may be out of date)';
+    draw();
+  }).catch(function(){
+    if(!DATA) document.getElementById('board').innerHTML = '<div class="msg">Could not load the schedule. Please try again in a minute.</div>';
+  });
+}
+clock(); load();
+setInterval(clock, 20000);
+setInterval(draw, 60000);
+setInterval(load, 5*60000);
+</script>
+</body>
+</html>
